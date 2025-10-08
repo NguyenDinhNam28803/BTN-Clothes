@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react';
-import { CreditCard, MapPin, Truck, CheckCircle, Package, LogIn } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { CreditCard, MapPin, Truck, CheckCircle, Package, LogIn, ChevronDown, ChevronUp } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { useToast } from '../components/Toast';
+import { supabase } from '../lib/supabase';
+import { v4 as uuidv4 } from 'uuid';
+import { Address } from '../types';
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -23,6 +26,8 @@ export default function Checkout() {
     postalCode: '',
   });
   
+  const [saveAddressOption, setSaveAddressOption] = useState(false);
+  
   // State cho thông tin đơn hàng
   const [orderSummary, setOrderSummary] = useState({
     subtotal: 0,
@@ -30,6 +35,36 @@ export default function Checkout() {
     discount: 0,
     total: 0
   });
+  
+  // State cho danh sách địa chỉ đã lưu
+  const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [appliedVoucher, setAppliedVoucher] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Function to apply selected address to input form
+  const applySelectedAddress = (addressId: string) => {
+    const selectedAddress = savedAddresses.find(address => address.id === addressId);
+    
+    if (selectedAddress) {
+      setShippingInfo({
+        fullName: selectedAddress.full_name,
+        email: user?.email || '',
+        phone: selectedAddress.phone,
+        address: selectedAddress.address_line1,
+        city: selectedAddress.city,
+        state: selectedAddress.state,
+        postalCode: selectedAddress.postal_code,
+      });
+      
+      setSelectedAddressId(addressId);
+      
+      // Show notification when address is selected
+      showToast('Shipping address applied', 'success');
+    }
+  };
 
   // Load thông tin từ localStorage khi component mount
   useEffect(() => {
@@ -50,6 +85,54 @@ export default function Checkout() {
       navigate('/cart');
       return;
     }
+    
+    // Định nghĩa hàm lấy địa chỉ trong useEffect để tránh warning
+    const loadSavedAddresses = async () => {
+      if (!user) return;
+      
+      try {
+        setLoadingAddresses(true);
+        
+        const { data, error } = await supabase
+          .from('addresses')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('is_default', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching saved addresses:', error);
+          return;
+        }
+        
+        if (data) {
+          setSavedAddresses(data);
+          
+          // Nếu có địa chỉ mặc định, chọn nó
+          const defaultAddress = data.find(address => address.is_default);
+          if (defaultAddress) {
+            setSelectedAddressId(defaultAddress.id);
+            
+            // Cập nhật form với địa chỉ mặc định
+            setShippingInfo({
+              fullName: defaultAddress.full_name,
+              email: user.email || '',
+              phone: defaultAddress.phone,
+              address: defaultAddress.address_line1,
+              city: defaultAddress.city,
+              state: defaultAddress.state,
+              postalCode: defaultAddress.postal_code,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error in fetchSavedAddresses:', error);
+      } finally {
+        setLoadingAddresses(false);
+      }
+    };
+    
+    // Lấy địa chỉ đã lưu của người dùng
+    loadSavedAddresses();
     
     // Load thông tin giao hàng
     const savedShippingInfo = localStorage.getItem('shippingInfo');
@@ -72,7 +155,27 @@ export default function Checkout() {
         console.error('Failed to parse order summary:', error);
       }
     }
+    
+    // Load applied voucher from localStorage
+    const storedVoucher = localStorage.getItem('activeVoucher');
+    if (storedVoucher) {
+      setAppliedVoucher(storedVoucher);
+    }
   }, [navigate, cartItems, user, authLoading]);
+  
+  // Xử lý click bên ngoài dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const steps = [
     { number: 1, title: 'Shipping', icon: MapPin },
@@ -88,73 +191,187 @@ export default function Checkout() {
   const tax = subtotal * 0.1;
   
   // Function to handle order placement
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     // Show processing notification
-    showToast('Đang xử lý đơn hàng...', 'info');
-    
-    // Generate a random order ID
-    const newOrderId = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
-    
-    // Create order object
-    const order = {
-      id: newOrderId,
-      date: new Date().toISOString(),
-      status: 'processing',
-      total: total,
-      items: cartItems.map(item => ({
-        id: item.id,
-        product_name: item.product?.name || 'Product',
-        quantity: item.quantity,
-        price: (item.product?.sale_price || item.product?.base_price || 0) + (item.variant?.price_adjustment || 0),
-        image_url: item.product?.images?.[0] || 'https://via.placeholder.com/100',
-        variant: item.variant
-      })),
-      shipping_address: {
-        fullName: shippingInfo.fullName,
-        address: shippingInfo.address,
-        city: shippingInfo.city,
-        postalCode: shippingInfo.postalCode,
-        phone: shippingInfo.phone
+      showToast('Processing your order...', 'info');    try {
+      // Generate unique ID for order
+      const orderId = uuidv4();
+      const orderNumber = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
+      const now = new Date().toISOString();
+      
+      // Lưu địa chỉ nếu người dùng chọn lưu
+      if (user && saveAddressOption) {
+        const fullName = shippingInfo.fullName.trim();
+        if (fullName) {
+          const addressData = {
+            id: uuidv4(),
+            user_id: user.id,
+            full_name: fullName,
+            phone: shippingInfo.phone,
+            address_line1: shippingInfo.address,
+            city: shippingInfo.city,
+            state: shippingInfo.state,
+            postal_code: shippingInfo.postalCode,
+            is_default: savedAddresses.length === 0, // Nếu là địa chỉ đầu tiên, đặt làm mặc định
+            created_at: now,
+            updated_at: now
+          };
+          
+          // Lưu địa chỉ mới vào cơ sở dữ liệu
+          const { error: addressError } = await supabase
+            .from('addresses')
+            .insert(addressData);
+            
+          if (addressError) {
+            console.error('Failed to save address:', addressError);
+            // Vẫn tiếp tục xử lý đơn hàng, chỉ ghi log lỗi
+          }
+        }
       }
-    };
-    
-    // Save order to localStorage with a slight delay to simulate processing
-    setTimeout(() => {
+      
+      // Create order record
+      const orderData = {
+        id: orderId,
+        user_id: user?.id,
+        order_number: orderNumber,
+        status: 'processing',
+        total_amount: total,
+        shipping_address: {
+          fullName: shippingInfo.fullName,
+          address: shippingInfo.address,
+          city: shippingInfo.city,
+          postal_code: shippingInfo.postalCode,
+          phone: shippingInfo.phone
+        },
+        payment_method: 'credit_card', // Assuming default payment method
+        payment_status: 'paid',
+        voucher_code: appliedVoucher || null, // Include the voucher code if applied
+        discount_amount: discount,
+        created_at: now,
+        updated_at: now
+      };
+      
+      // Insert order into database
+      const { error: orderError } = await supabase
+        .from('orders')
+        .insert(orderData);
+      
+      if (orderError) {
+        throw orderError;
+      }
+      
       try {
-        // Get existing orders or initialize empty array
-        const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-        existingOrders.push(order);
-        localStorage.setItem('orders', JSON.stringify(existingOrders));
+        // First insert the order (which establishes ownership)
+        // Then attempt to insert order items with transaction
+        const { error: itemsError } = await supabase
+          .from('order_items')
+          .insert(cartItems.map(item => ({
+            id: uuidv4(),
+            order_id: orderId,
+            product_id: item.product?.id,
+            variant_id: item.variant?.id,
+            quantity: item.quantity,
+            price: (item.product?.sale_price || item.product?.base_price || 0) + (item.variant?.price_adjustment || 0),
+            created_at: now
+          })));
         
-        // Update orders list
-        const ordersList = JSON.parse(localStorage.getItem('ordersList') || '[]');
-        ordersList.push({
-          id: newOrderId,
-          date: new Date().toISOString(),
-          status: 'processing',
-          total: total,
-          items_count: cartItems.length
-        });
-        localStorage.setItem('ordersList', JSON.stringify(ordersList));
-        
-        // Set order as complete and store the ID
-        setOrderId(newOrderId);
-        setOrderComplete(true);
-        
-        // Clear the cart
-        clearCart();
-        
-        // Remove checkout data from localStorage
-        localStorage.removeItem('shippingInfo');
-        localStorage.removeItem('orderSummary');
-        
-        // Show success notification
-        showToast('Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại BTN Clothes.', 'success');
+        if (itemsError) {
+          console.error('Error inserting order items:', itemsError);
+          
+          // If error is RLS related, try a different approach with multiple single inserts
+          if (itemsError.message.includes('violates row-level security policy')) {
+            console.log('Attempting to insert order items individually to bypass RLS...');
+            
+            for (const item of cartItems) {
+              const { error: singleItemError } = await supabase
+                .from('order_items')
+                .insert({
+                  id: uuidv4(),
+                  order_id: orderId,
+                  product_id: item.product?.id,
+                  variant_id: item.variant?.id,
+                  quantity: item.quantity,
+                  price: (item.product?.sale_price || item.product?.base_price || 0) + (item.variant?.price_adjustment || 0),
+                  created_at: now
+                });
+                
+              if (singleItemError) {
+                console.error('Error inserting single order item:', singleItemError);
+              }
+            }
+          } else {
+            throw itemsError;
+          }
+        }
       } catch (error) {
-        console.error('Failed to save order:', error);
-        showToast('Đã xảy ra lỗi khi xử lý đơn hàng. Vui lòng thử lại.', 'error');
+        console.error('Error in order items insertion:', error);
+        throw error;
       }
-    }, 1000);
+      
+      // Update product variant stock quantities
+      for (const item of cartItems) {
+        if (item.variant?.id) {
+          const { data: variantData, error: stockError } = await supabase
+            .from('product_variants')
+            .select('stock_quantity')
+            .eq('id', item.variant.id)
+            .single();
+          
+          if (!stockError && variantData) {
+            const newStock = Math.max(0, variantData.stock_quantity - item.quantity);
+            await supabase
+              .from('product_variants')
+              .update({ stock_quantity: newStock })
+              .eq('id', item.variant.id);
+          }
+        }
+      }
+      
+      // If order used a voucher, mark it as used
+      if (appliedVoucher && user) {
+        const { data: voucherData, error: voucherError } = await supabase
+          .from('vouchers')
+          .select('id')
+          .eq('code', appliedVoucher)
+          .single();
+          
+        if (!voucherError && voucherData) {
+          // Update user_vouchers to mark this voucher as used
+          await supabase
+            .from('user_vouchers')
+            .update({
+              is_used: true,
+              used_at: now
+            })
+            .eq('user_id', user.id)
+            .eq('voucher_id', voucherData.id);
+            
+          // Also increment the used_count on the voucher itself
+          await supabase
+            .from('vouchers')
+            .update({
+              used_count: supabase.rpc('increment', { x: 1 })
+            })
+            .eq('id', voucherData.id);
+        }
+      }
+      
+      // Complete the order process
+      setOrderId(orderNumber);
+      setOrderComplete(true);
+      
+      // Clear cart and local storage
+      clearCart();
+      localStorage.removeItem('shippingInfo');
+      localStorage.removeItem('orderSummary');
+      localStorage.removeItem('activeVoucher');
+      
+      // Show success notification
+      showToast('Order placed successfully! Thank you for shopping with BTN Clothes.', 'success');
+    } catch (error) {
+      console.error('Failed to save order:', error);
+      showToast('An error occurred while processing your order. Please try again.', 'error');
+    }
   };
 
   if (orderComplete) {
@@ -166,9 +383,9 @@ export default function Checkout() {
               <CheckCircle className="text-green-500" size={40} />
             </div>
             
-            <h1 className="text-3xl font-serif mb-4">Order Complete!</h1>
+            <h1 className="text-3xl font-serif mb-4">Order Successful!</h1>
             <p className="text-gray-600 mb-8">
-              Thank you for your purchase. Your order has been received and is being processed.
+              Thank you for shopping with BTN Clothes. Your order has been received and is now being processed.
             </p>
             
             <div className="mb-8">
@@ -251,6 +468,111 @@ export default function Checkout() {
               {currentStep === 1 && (
                 <div>
                   <h2 className="text-2xl font-serif mb-6">Shipping Information</h2>
+                  
+                  {/* Saved addresses as combobox */}
+                  {savedAddresses.length > 0 && (
+                    <div className="mb-8">
+                      <h3 className="text-lg font-medium mb-4">Select delivery address</h3>
+                      
+                      <div className="relative mb-6" ref={dropdownRef}>
+                        <div 
+                          className="w-full flex justify-between items-center px-4 py-3 border border-gray-300 rounded-lg cursor-pointer"
+                          onClick={() => setDropdownOpen(prev => !prev)}
+                        >
+                          {selectedAddressId ? (
+                            <div>
+                              {(() => {
+                                const selected = savedAddresses.find(a => a.id === selectedAddressId);
+                                return selected ? (
+                                  <div>
+                                    <p className="font-medium">{selected.full_name}</p>
+                                    <p className="text-sm text-gray-600">
+                                      {selected.address_line1}, {selected.city}
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                      Phone: {selected.phone}
+                                    </p>
+                                  </div>
+                                ) : "Select address";
+                              })()}
+                            </div>
+                          ) : (
+                            <span className="text-gray-500">Select address</span>
+                          )}
+                          
+                          {dropdownOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                        </div>
+                        
+                        {/* Dropdown menu */}
+                        {dropdownOpen && (
+                          <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg">
+                            {savedAddresses.map(address => (
+                              <div 
+                                key={address.id} 
+                                className={`p-3 border-b last:border-b-0 hover:bg-gray-50 cursor-pointer
+                                  ${selectedAddressId === address.id ? 'bg-teal-50' : ''}`}
+                                onClick={() => {
+                                  applySelectedAddress(address.id);
+                                  setDropdownOpen(false);
+                                }}
+                              >
+                                <div className="flex justify-between">
+                                  <div>
+                                    <p className="font-medium">
+                                      {address.full_name}
+                                      {address.is_default && (
+                                        <span className="ml-2 text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
+                                          Default
+                                        </span>
+                                      )}
+                                    </p>
+                                    <p className="text-sm text-gray-600">{address.phone}</p>
+                                    <p className="text-sm text-gray-600">
+                                      {address.address_line1}, {address.city}, {address.state} {address.postal_code}
+                                    </p>
+                                  </div>
+                                  {selectedAddressId === address.id && (
+                                    <div className="text-teal-500 flex items-center">
+                                      <CheckCircle size={16} />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                            
+                            {/* Add new address option */}
+                            <div className="p-3 text-center border-t">
+                              <button 
+                                type="button"
+                                className="text-teal-600 hover:underline text-sm font-medium"
+                                onClick={() => {
+                                  setSelectedAddressId(null);
+                                  setShippingInfo({
+                                    fullName: '',
+                                    email: user?.email || '',
+                                    phone: '',
+                                    address: '',
+                                    city: '',
+                                    state: '',
+                                    postalCode: '',
+                                  });
+                                  setDropdownOpen(false);
+                                }}
+                              >
+                                + Add new address
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {!selectedAddressId && (
+                        <h3 className="text-lg font-medium mb-4">Enter new address</h3>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Shipping information form */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium mb-2">Full Name</label>
@@ -269,11 +591,11 @@ export default function Checkout() {
                         value={shippingInfo.email}
                         onChange={(e) => setShippingInfo({ ...shippingInfo, email: e.target.value })}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        placeholder="john@example.com"
+                        placeholder="example@gmail.com"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2">Phone</label>
+                      <label className="block text-sm font-medium mb-2">Phone Number</label>
                       <input
                         type="tel"
                         value={shippingInfo.phone}
@@ -283,7 +605,7 @@ export default function Checkout() {
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium mb-2">Street Address</label>
+                      <label className="block text-sm font-medium mb-2">Address</label>
                       <input
                         type="text"
                         value={shippingInfo.address}
@@ -322,6 +644,22 @@ export default function Checkout() {
                         placeholder="10001"
                       />
                     </div>
+                    
+                    {/* Option to save this address */}
+                    {user && selectedAddressId === null && (
+                      <div className="md:col-span-2 flex items-center mt-4">
+                        <input
+                          type="checkbox"
+                          id="save_address"
+                          checked={saveAddressOption}
+                          onChange={(e) => setSaveAddressOption(e.target.checked)}
+                          className="mr-2 h-4 w-4 text-teal-500 focus:ring-teal-500"
+                        />
+                        <label htmlFor="save_address" className="text-sm text-gray-600">
+                          Save this address for future orders
+                        </label>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

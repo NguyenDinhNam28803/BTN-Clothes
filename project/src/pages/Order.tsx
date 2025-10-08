@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { CheckCircle, Truck, Clock, Package, ArrowLeft } from 'lucide-react';
 import { useToast } from '../components/Toast';
+import { supabase } from '../lib/supabase';
 
 // Define order status types
 type OrderStatus = 'processing' | 'shipped' | 'delivered' | 'cancelled';
@@ -43,60 +44,112 @@ export default function Order() {
   const { showToast } = useToast();
 
   useEffect(() => {
-    const fetchOrder = () => {
+    const fetchOrder = async () => {
+      if (!orderId) return;
+      
       setLoading(true);
       
-      setTimeout(() => {
-        const savedOrders = localStorage.getItem('orders');
-        if (savedOrders) {
-          const parsedOrders = JSON.parse(savedOrders);
-          const foundOrder = parsedOrders.find((order: Order) => order.id === orderId);
-          if (foundOrder) {
-            setOrder(foundOrder);
-            
-            showToast(`Đơn hàng #${foundOrder.id} đang ${foundOrder.status === 'processing' 
-              ? 'được xử lý' 
-              : foundOrder.status === 'shipped' 
-              ? 'vận chuyển' 
-              : foundOrder.status === 'delivered' 
-              ? 'đã giao' 
-              : 'đã hủy'}`, 'info');
-          }
-        } else {
-          const mockOrder: Order = {
-            id: orderId || 'ORD-123456',
-            date: '2025-10-06T10:30:00Z',
-            status: 'shipped',
-            total: 50.39,
-            items: [
-              {
-                id: 'prod-1',
-                product_name: 'Designer Jeans',
-                quantity: 1,
-                price: 62.99,
-                image_url: 'https://via.placeholder.com/100',
-                variant: {
-                  color: 'Blue',
-                  size: '30'
-                }
-              }
-            ],
-            shipping_address: {
-              fullName: 'Ngô Gia Bảo',
-              address: 'Topaz twins Khu B',
-              city: 'Thống nhất, NY',
-              postalCode: '700000',
-              phone: '0395291746'
-            },
-            tracking_number: 'TRK78912345678',
-            estimated_delivery: '2025-10-10'
-          };
-          setOrder(mockOrder);
-          
-          showToast(`Xem thông tin đơn hàng mẫu #${mockOrder.id}`, 'info');
+      try {
+        // First, get order details
+        const { data: orderData, error: orderError } = await supabase
+          .from('orders')
+          .select('*')
+          .eq(orderId.startsWith('ORD-') ? 'order_number' : 'id', orderId)
+          .single();
+        
+        if (orderError || !orderData) {
+          throw new Error('Order not found');
         }
+        
+        // Define an interface for the query response
+        interface OrderItemQueryResult {
+          id: string;
+          quantity: number;
+          price: number;
+          product: {
+            name: string;
+            images: string[];
+          };
+          variant: {
+            color: string;
+            size: string;
+          };
+        }
+        
+        // Then get order items
+        const { data: orderItemsData, error: itemsError } = await supabase
+          .from('order_items')
+          .select(`
+            id,
+            quantity,
+            price,
+            product:product_id (
+              name,
+              images
+            ),
+            variant:variant_id (
+              color,
+              size
+            )
+          `)
+          .eq('order_id', orderData.id);
+          
+        if (itemsError) {
+          throw itemsError;
+        }
+        
+        // Format the order items
+        const items: OrderItem[] = orderItemsData.map(item => {
+          // Cast to any to handle the nested objects from Supabase
+          const typedItem = item as any;
+          
+          return {
+            id: typedItem.id,
+            product_name: typedItem.product?.name || 'Product',
+            quantity: typedItem.quantity,
+            price: typedItem.price,
+            image_url: typedItem.product?.images?.[0] || 'https://via.placeholder.com/100',
+            variant: {
+              color: typedItem.variant?.color || 'Default',
+              size: typedItem.variant?.size || 'One Size'
+            }
+          };
+        });
+        
+        // Create complete order object
+        const completeOrder: Order = {
+          id: orderData.order_number || orderData.id,
+          date: orderData.created_at,
+          status: orderData.status as OrderStatus,
+          total: orderData.total_amount,
+          items: items,
+          shipping_address: orderData.shipping_address || {
+            fullName: 'N/A',
+            address: 'N/A',
+            city: 'N/A',
+            postalCode: 'N/A',
+            phone: 'N/A'
+          },
+          tracking_number: orderData.tracking_number,
+          estimated_delivery: orderData.estimated_delivery
+        };
+        
+        setOrder(completeOrder);
+        
+        showToast(`Đơn hàng #${completeOrder.id} đang ${completeOrder.status === 'processing' 
+          ? 'được xử lý' 
+          : completeOrder.status === 'shipped' 
+          ? 'vận chuyển' 
+          : completeOrder.status === 'delivered' 
+          ? 'đã giao' 
+          : 'đã hủy'}`, 'info');
+          
+      } catch (error) {
+        console.error('Error fetching order:', error);
+        showToast('Không tìm thấy đơn hàng hoặc có lỗi xảy ra', 'error');
+      } finally {
         setLoading(false);
-      }, 800);
+      }
     };
 
     fetchOrder();
