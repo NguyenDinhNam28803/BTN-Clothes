@@ -158,7 +158,7 @@ export default function Home() {
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         <video
           className="absolute inset-0 z-0 w-full h-full object-cover"
-          style={{ filter: 'blur(2px)' }}
+          style={{}}
           src="src/Assets/IMG/BTN.mp4"
           autoPlay
           loop

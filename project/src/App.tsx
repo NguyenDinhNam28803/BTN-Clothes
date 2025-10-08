@@ -57,18 +57,16 @@ function AppContent() {
 }
 
 function App() {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => {
+    // Kiểm tra ngay từ đầu
+    return !sessionStorage.getItem('hasVisited');
+  });
 
-  useEffect(() => {
-    const hasVisited = sessionStorage.getItem('hasVisited');
-    if (hasVisited) {
-      setIsLoading(false);
-    }
-  }, []);
+  
 
   const handleLoadComplete = () => {
-    setIsLoading(false);
     sessionStorage.setItem('hasVisited', 'true');
+    setIsLoading(false);
   };
 
   return (
@@ -77,10 +75,11 @@ function App() {
         <CartProvider>
           <WishlistProvider>
             <ToastProvider>
-              <AnimatePresence mode="wait">
-                {isLoading && <LoadingScreen onLoadComplete={handleLoadComplete} />}
-              </AnimatePresence>
-              {!isLoading && <AppContent />}
+              {isLoading ? (
+                <LoadingScreen onLoadComplete={handleLoadComplete} />
+              ) : (
+                <AppContent />
+              )}
             </ToastProvider>
           </WishlistProvider>
         </CartProvider>

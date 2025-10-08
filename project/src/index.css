@@ -42,8 +42,15 @@
   }
 }
 
+/* ✅ FIX 1: Loại bỏ overflow-x hidden và đơn giản hóa */
 html {
-  overflow-x: hidden;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  position: relative;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html.lenis {
@@ -66,18 +73,39 @@ html.lenis {
   pointer-events: none;
 }
 
+/* ✅ FIX 2: Body không cần overflow-x hidden */
 body {
   font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ✅ FIX 3: Root container */
+#root {
+  position: relative;
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
   overflow-x: hidden;
 }
 
 #smooth-scroll-wrapper {
+  position: relative;
   width: 100%;
+  margin: 0;
+  padding: 0;
+  transform: none !important;
 }
 
 * {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  box-sizing: border-box;  /* ✅ THÊM: Prevent sizing issues */
 }
 
 .will-change-transform {
@@ -95,28 +123,31 @@ body {
   -webkit-backface-visibility: hidden;
 }
 
+/* ✅ FIX 4: Chỉ áp dụng hover cho specific elements, loại bỏ transform */
 button,
 a,
-[role="button"],
-.product-card,
 input,
 textarea,
 select {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-button:hover,
-a:hover,
-[role="button"]:hover,
+button:hover:not(:disabled),
+a:hover {
+  opacity: 0.8;
+}
+
+/* ✅ FIX 5: Product card riêng biệt với scale thay vì translateY */
+.product-card {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .product-card:hover {
-  transform: translateY(-2px);
+  transform: scale(1.02);  /* Dùng scale thay vì translateY */
 }
 
-button:active,
-a:active,
-[role="button"]:active,
 .product-card:active {
-  transform: translateY(0);
+  transform: scale(0.98);
 }
 
 .hero-section {
