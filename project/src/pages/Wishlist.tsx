@@ -1,14 +1,61 @@
 import { Link } from 'react-router-dom';
 import { X, ShoppingCart, ArrowRight, Loader2 } from 'lucide-react';
+import { useState } from 'react';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useCart } from '../contexts/CartContext';
+import { useToast } from '../components/Toast';
+import { supabase } from '../lib/supabase';
 
 export default function Wishlist() {
   const { items, loading, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
+  const { showToast } = useToast();
+  const [isAddingAll, setIsAddingAll] = useState(false);
 
   const removeItem = (id: string) => {
     removeFromWishlist(id);
+  };
+  
+  const addAllToCart = async () => {
+    setIsAddingAll(true);
+    
+    try {
+      // Filter items that are available (status = active)
+      const availableItems = items.filter(item => item.product && item.product.status === 'active');
+      
+      if (availableItems.length === 0) {
+        showToast('No available items to add to cart', 'warning');
+        return;
+      }
+      
+      // For each available product, get a variant and add to cart
+      let addedCount = 0;
+      for (const item of availableItems) {
+        // Get the first available variant for this product
+        const { data: variants } = await supabase
+          .from('product_variants')
+          .select('*')
+          .eq('product_id', item.product_id)
+          .gt('stock_quantity', 0)
+          .limit(1);
+          
+        if (variants && variants.length > 0) {
+          await addToCart(item.product_id, variants[0].id, 1);
+          addedCount++;
+        }
+      }
+      
+      if (addedCount > 0) {
+        showToast(`Added ${addedCount} item${addedCount > 1 ? 's' : ''} to cart!`, 'success');
+      } else {
+        showToast('No items could be added to cart', 'error');
+      }
+    } catch (error) {
+      console.error('Error adding items to cart:', error);
+      showToast('Failed to add items to cart', 'error');
+    } finally {
+      setIsAddingAll(false);
+    }
   };
 
   // Loading state
@@ -59,8 +106,22 @@ export default function Wishlist() {
             <h1 className="text-4xl md:text-5xl font-serif mb-2">My Wishlist</h1>
             <p className="text-gray-600">{items.length} {items.length === 1 ? 'item' : 'items'}</p>
           </div>
-          <button className="px-6 py-3 bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition-colors">
-            Add All to Cart
+          <button 
+            onClick={addAllToCart} 
+            disabled={isAddingAll}
+            className="px-6 py-3 bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition-colors flex items-center gap-2"
+          >
+            {isAddingAll ? (
+              <>
+                <Loader2 size={20} className="animate-spin" />
+                Adding...
+              </>
+            ) : (
+              <>
+                <ShoppingCart size={20} />
+                Add All to Cart
+              </>
+            )}
           </button>
         </div>
 
@@ -110,7 +171,21 @@ export default function Wishlist() {
 
                 {item.product && item.product.status === 'active' ? (
                   <button 
-                    onClick={() => addToCart(item.product_id)} 
+                    onClick={async () => {
+                      const { data: variants } = await supabase
+                        .from('product_variants')
+                        .select('*')
+                        .eq('product_id', item.product_id)
+                        .gt('stock_quantity', 0)
+                        .limit(1);
+                        
+                      if (variants && variants.length > 0) {
+                        await addToCart(item.product_id, variants[0].id, 1);
+                        showToast('Added to cart!', 'success');
+                      } else {
+                        showToast('Product is out of stock', 'error');
+                      }
+                    }} 
                     className="w-full flex items-center justify-center gap-2 py-3 bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition-colors"
                   >
                     <ShoppingCart size={20} />
@@ -136,6 +211,8 @@ export default function Wishlist() {
               type="text"
               value="https://btnclothes.com/wishlist/abc123"
               readOnly
+              aria-label="Wishlist share link"
+              title="Wishlist share link"
               className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-gray-50"
             />
             <button className="px-6 py-3 bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition-colors">

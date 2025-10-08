@@ -13,6 +13,10 @@ export default function Header() {
   const { getWishlistCount } = useWishlist();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  const handleSearch = () => {
+    navigate('/shop?focusSearch=true');
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -59,7 +63,7 @@ export default function Header() {
               Shop
             </Link>
             <Link
-              to="/men"
+              to="/shop?category=men"
               className={`font-medium transition-colors hover:text-teal-500 ${
                 isScrolled || !hasHeroImage ? 'text-gray-800' : 'text-white'
               }`}
@@ -67,7 +71,7 @@ export default function Header() {
               Men
             </Link>
             <Link
-              to="/women"
+              to="/shop?category=women"
               className={`font-medium transition-colors hover:text-teal-500 ${
                 isScrolled || !hasHeroImage ? 'text-gray-800' : 'text-white'
               }`}
@@ -94,6 +98,7 @@ export default function Header() {
 
           <div className="flex items-center gap-4">
             <button
+              onClick={handleSearch}
               className={`p-2 transition-colors hover:text-teal-500 ${
                 isScrolled || !hasHeroImage ? 'text-gray-800' : 'text-white'
               }`}
@@ -183,10 +188,10 @@ export default function Header() {
               <Link to="/shop" className={`font-medium ${isScrolled || !hasHeroImage ? 'text-gray-800' : 'text-white'}`}>
                 Shop
               </Link>
-              <Link to="/men" className={`font-medium ${isScrolled || !hasHeroImage ? 'text-gray-800' : 'text-white'}`}>
+              <Link to="/shop?category=men" className={`font-medium ${isScrolled || !hasHeroImage ? 'text-gray-800' : 'text-white'}`}>
                 Men
               </Link>
-              <Link to="/women" className={`font-medium ${isScrolled || !hasHeroImage ? 'text-gray-800' : 'text-white'}`}>
+              <Link to="/shop?category=women" className={`font-medium ${isScrolled || !hasHeroImage ? 'text-gray-800' : 'text-white'}`}>
                 Women
               </Link>
               <Link to="/sale" className={`font-medium ${isScrolled || !hasHeroImage ? 'text-red-600' : 'text-red-400'}`}>
