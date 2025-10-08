@@ -14,17 +14,10 @@ export default function CustomCursor() {
   const cursorXSpring = useSpring(cursorX, springConfig);
   const cursorYSpring = useSpring(cursorY, springConfig);
 
-  const followerX = useMotionValue(0);
-  const followerY = useMotionValue(0);
-  const followerXSpring = useSpring(followerX, { damping: 30, stiffness: 150 });
-  const followerYSpring = useSpring(followerY, { damping: 30, stiffness: 150 });
-
   useEffect(() => {
     const updateCursorPosition = (e: MouseEvent) => {
       cursorX.set(e.clientX);
       cursorY.set(e.clientY);
-      followerX.set(e.clientX);
-      followerY.set(e.clientY);
 
       if (!isVisible) setIsVisible(true);
 
@@ -72,7 +65,7 @@ export default function CustomCursor() {
       document.removeEventListener('mouseover', handleMouseOver);
       document.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, [isVisible, cursorX, cursorY, followerX, followerY]);
+  }, [isVisible, cursorX, cursorY]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -191,21 +184,6 @@ export default function CustomCursor() {
           </motion.div>
         )}
       </motion.div>
-
-      <motion.div
-        className="fixed pointer-events-none z-[99998] rounded-full"
-        style={{
-          left: followerXSpring,
-          top: followerYSpring,
-          width: size.width * 2,
-          height: size.height * 2,
-          x: -size.width,
-          y: -size.height,
-          background: getCursorColor(),
-          opacity: 0.1,
-          mixBlendMode: 'screen',
-        }}
-      />
 
       <style>{`
         * {

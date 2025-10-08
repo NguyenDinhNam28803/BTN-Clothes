@@ -27,7 +27,7 @@ function AppContent() {
   const location = useLocation();
 
   return (
-    <SmoothScroll>
+    <div className="w-full min-h-screen overflow-x-hidden">
       <CustomCursor />
       <TransitionLoader />
       <Header />
