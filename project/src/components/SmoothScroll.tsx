@@ -19,18 +19,23 @@ export default function SmoothScroll({ children }: SmoothScrollProps) {
         wheelMultiplier: 1,
         touchMultiplier: 2,
         infinite: false,
-        smoothTouch: false,
       });
+    }
 
     function raf(time: number) {
-      lenisRef.current?.raf(time);
-      requestAnimationFrame(raf);
+      if (lenisRef.current) {
+        lenisRef.current.raf(time);
+        requestAnimationFrame(raf);
+      }
     }
 
     requestAnimationFrame(raf);
 
     return () => {
-      lenisRef.current?.destroy();
+      if (lenisRef.current) {
+        lenisRef.current.destroy();
+        lenisRef.current = null;
+      }
     };
   }, []);
 
