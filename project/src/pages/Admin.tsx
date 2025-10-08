@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   Package,
@@ -12,9 +12,154 @@ import {
   ShoppingBag,
   AlertCircle,
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { Product, Order } from '../types';
+import { useToast } from '../components/Toast';
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const { showToast } = useToast();
+  
+  // State for data
+  const [products, setProducts] = useState<Product[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    totalOrders: 0,
+    totalCustomers: 0,
+    lowStockItems: 0
+  });
+  
+  // Filters
+  const [productSearch, setProductSearch] = useState('');
+  const [productCategory, setProductCategory] = useState('all');
+  const [productStatus, setProductStatus] = useState('all');
+  const [orderSearch, setOrderSearch] = useState('');
+  const [orderStatus, setOrderStatus] = useState('all');
+  
+  useEffect(() => {
+    loadData();
+  }, []);
+  
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      await Promise.all([
+        loadProducts(),
+        loadOrders(),
+        loadStats()
+      ]);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      showToast('Failed to load data', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const loadProducts = async () => {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error loading products:', error);
+    } else {
+      setProducts(data || []);
+    }
+  };
+  
+  const loadOrders = async () => {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error loading orders:', error);
+    } else {
+      setOrders(data || []);
+    }
+  };
+  
+  const loadStats = async () => {
+    try {
+      // Total revenue from completed orders
+      const { data: completedOrders } = await supabase
+        .from('orders')
+        .select('total_amount')
+        .in('status', ['delivered']);
+      
+      const totalRevenue = completedOrders?.reduce((sum, order) => sum + order.total_amount, 0) || 0;
+      
+      // Total orders
+      const { count: totalOrders } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true });
+      
+      // Total customers
+      const { count: totalCustomers } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'customer');
+      
+      // Low stock items (variants with stock < 10)
+      const { data: lowStockVariants } = await supabase
+        .from('product_variants')
+        .select('product_id')
+        .lt('stock_quantity', 10);
+      
+      const uniqueLowStockProducts = new Set(lowStockVariants?.map(v => v.product_id) || []);
+      
+      setStats({
+        totalRevenue,
+        totalOrders: totalOrders || 0,
+        totalCustomers: totalCustomers || 0,
+        lowStockItems: uniqueLowStockProducts.size
+      });
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
+  
+  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: newStatus })
+        .eq('id', orderId);
+      
+      if (error) throw error;
+      
+      showToast('Order status updated', 'success');
+      loadOrders();
+    } catch (error) {
+      console.error('Error updating order:', error);
+      showToast('Failed to update order status', 'error');
+    }
+  };
+  
+  const getProductStatus = (product: Product) => {
+    // This would need to check variants stock
+    if (product.status === 'inactive') return 'Inactive';
+    // Simplified - in real app would check total stock from variants
+    return 'Active';
+  };
+  
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(productSearch.toLowerCase());
+    const matchesCategory = productCategory === 'all' || product.category_id === productCategory;
+    const matchesStatus = productStatus === 'all' || product.status === productStatus;
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
+  
+  const filteredOrders = orders.filter(order => {
+    const matchesSearch = order.id.toLowerCase().includes(orderSearch.toLowerCase());
+    const matchesStatus = orderStatus === 'all' || order.status === orderStatus;
+    return matchesSearch && matchesStatus;
+  });
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -26,26 +171,14 @@ export default function Admin() {
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
-  const stats = [
-    { label: 'Total Revenue', value: '$45,231', change: '+12.5%', icon: DollarSign, color: 'bg-green-500' },
-    { label: 'Total Orders', value: '1,234', change: '+8.2%', icon: ShoppingBag, color: 'bg-blue-500' },
-    { label: 'Total Customers', value: '892', change: '+15.3%', icon: Users, color: 'bg-purple-500' },
-    { label: 'Low Stock Items', value: '23', change: '-3', icon: AlertCircle, color: 'bg-red-500' },
+  const statsDisplay = [
+    { label: 'Total Revenue', value: `$${stats.totalRevenue.toFixed(2)}`, change: '+12.5%', icon: DollarSign, color: 'bg-green-500' },
+    { label: 'Total Orders', value: stats.totalOrders.toString(), change: '+8.2%', icon: ShoppingBag, color: 'bg-blue-500' },
+    { label: 'Total Customers', value: stats.totalCustomers.toString(), change: '+15.3%', icon: Users, color: 'bg-purple-500' },
+    { label: 'Low Stock Items', value: stats.lowStockItems.toString(), change: '-3', icon: AlertCircle, color: 'bg-red-500' },
   ];
 
-  const recentOrders = [
-    { id: 'BTN001', customer: 'John Doe', total: 149.99, status: 'Pending', date: '2024-10-04' },
-    { id: 'BTN002', customer: 'Jane Smith', total: 89.99, status: 'Shipped', date: '2024-10-03' },
-    { id: 'BTN003', customer: 'Bob Johnson', total: 199.99, status: 'Delivered', date: '2024-10-03' },
-    { id: 'BTN004', customer: 'Alice Brown', total: 129.99, status: 'Processing', date: '2024-10-02' },
-  ];
-
-  const products = [
-    { id: 1, name: 'Premium Cotton Shirt', category: 'Men', price: 49.99, stock: 45, status: 'Active' },
-    { id: 2, name: 'Designer Jeans', category: 'Women', price: 79.99, stock: 23, status: 'Active' },
-    { id: 3, name: 'Leather Jacket', category: 'Men', price: 149.99, stock: 8, status: 'Low Stock' },
-    { id: 4, name: 'Summer Dress', category: 'Women', price: 59.99, stock: 0, status: 'Out of Stock' },
-  ];
+  const recentOrders = orders.slice(0, 4);
 
   return (
     <div className="min-h-screen pt-20 pb-16 bg-gray-50">
@@ -82,7 +215,7 @@ export default function Admin() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                {stats.map((stat, index) => {
+                {statsDisplay.map((stat, index) => {
                   const Icon = stat.icon;
                   return (
                     <div key={index} className="bg-white rounded-2xl shadow-lg p-6">
@@ -167,34 +300,50 @@ export default function Admin() {
                       </tr>
                     </thead>
                     <tbody>
-                      {recentOrders.map((order) => (
-                        <tr key={order.id} className="border-b hover:bg-gray-50">
-                          <td className="py-3 px-4 font-medium">{order.id}</td>
-                          <td className="py-3 px-4">{order.customer}</td>
-                          <td className="py-3 px-4">{order.date}</td>
-                          <td className="py-3 px-4 font-semibold">${order.total}</td>
-                          <td className="py-3 px-4">
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                order.status === 'Delivered'
-                                  ? 'bg-green-100 text-green-700'
-                                  : order.status === 'Shipped'
-                                  ? 'bg-blue-100 text-blue-700'
-                                  : order.status === 'Processing'
-                                  ? 'bg-yellow-100 text-yellow-700'
-                                  : 'bg-gray-100 text-gray-700'
-                              }`}
-                            >
-                              {order.status}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <button className="text-teal-500 hover:text-teal-600 font-medium">
-                              View
-                            </button>
+                      {loading ? (
+                        <tr>
+                          <td colSpan={6} className="py-8 text-center text-gray-600">
+                            Loading orders...
                           </td>
                         </tr>
-                      ))}
+                      ) : recentOrders.length > 0 ? (
+                        recentOrders.map((order) => (
+                          <tr key={order.id} className="border-b hover:bg-gray-50">
+                            <td className="py-3 px-4 font-medium">{order.id.substring(0, 8)}</td>
+                            <td className="py-3 px-4">{order.shipping_address?.full_name || 'N/A'}</td>
+                            <td className="py-3 px-4">{new Date(order.created_at).toLocaleDateString()}</td>
+                            <td className="py-3 px-4 font-semibold">${order.total_amount.toFixed(2)}</td>
+                            <td className="py-3 px-4">
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                  order.status === 'delivered'
+                                    ? 'bg-green-100 text-green-700'
+                                    : order.status === 'shipped'
+                                    ? 'bg-blue-100 text-blue-700'
+                                    : order.status === 'processing'
+                                    ? 'bg-yellow-100 text-yellow-700'
+                                    : order.status === 'cancelled'
+                                    ? 'bg-red-100 text-red-700'
+                                    : 'bg-gray-100 text-gray-700'
+                                }`}
+                              >
+                                {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <button className="text-teal-500 hover:text-teal-600 font-medium">
+                                View
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={6} className="py-8 text-center text-gray-600">
+                            No orders found
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -219,19 +368,25 @@ export default function Admin() {
                   <input
                     type="text"
                     placeholder="Search products..."
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
-                  <select className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
-                    <option>All Categories</option>
-                    <option>Men</option>
-                    <option>Women</option>
-                    <option>Kids</option>
+                  <select 
+                    value={productCategory}
+                    onChange={(e) => setProductCategory(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="all">All Categories</option>
                   </select>
-                  <select className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
-                    <option>All Status</option>
-                    <option>Active</option>
-                    <option>Low Stock</option>
-                    <option>Out of Stock</option>
+                  <select 
+                    value={productStatus}
+                    onChange={(e) => setProductStatus(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
                   </select>
                 </div>
 
@@ -248,37 +403,49 @@ export default function Admin() {
                       </tr>
                     </thead>
                     <tbody>
-                      {products.map((product) => (
-                        <tr key={product.id} className="border-b hover:bg-gray-50">
-                          <td className="py-3 px-4 font-medium">{product.name}</td>
-                          <td className="py-3 px-4">{product.category}</td>
-                          <td className="py-3 px-4 font-semibold">${product.price}</td>
-                          <td className="py-3 px-4">{product.stock}</td>
-                          <td className="py-3 px-4">
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                product.status === 'Active'
-                                  ? 'bg-green-100 text-green-700'
-                                  : product.status === 'Low Stock'
-                                  ? 'bg-yellow-100 text-yellow-700'
-                                  : 'bg-red-100 text-red-700'
-                              }`}
-                            >
-                              {product.status}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex gap-2">
-                              <button className="text-blue-500 hover:text-blue-600 font-medium">
-                                Edit
-                              </button>
-                              <button className="text-red-500 hover:text-red-600 font-medium">
-                                Delete
-                              </button>
-                            </div>
+                      {loading ? (
+                        <tr>
+                          <td colSpan={6} className="py-8 text-center text-gray-600">
+                            Loading products...
                           </td>
                         </tr>
-                      ))}
+                      ) : filteredProducts.length > 0 ? (
+                        filteredProducts.map((product) => (
+                          <tr key={product.id} className="border-b hover:bg-gray-50">
+                            <td className="py-3 px-4 font-medium">{product.name}</td>
+                            <td className="py-3 px-4">Category</td>
+                            <td className="py-3 px-4 font-semibold">${(product.sale_price || product.base_price).toFixed(2)}</td>
+                            <td className="py-3 px-4">-</td>
+                            <td className="py-3 px-4">
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                  product.status === 'active'
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-red-100 text-red-700'
+                                }`}
+                              >
+                                {product.status.charAt(0).toUpperCase() + product.status.slice(1)}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="flex gap-2">
+                                <button className="text-blue-500 hover:text-blue-600 font-medium">
+                                  Edit
+                                </button>
+                                <button className="text-red-500 hover:text-red-600 font-medium">
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={6} className="py-8 text-center text-gray-600">
+                            No products found
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -298,15 +465,21 @@ export default function Admin() {
                   <input
                     type="text"
                     placeholder="Search orders..."
+                    value={orderSearch}
+                    onChange={(e) => setOrderSearch(e.target.value)}
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
-                  <select className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
-                    <option>All Status</option>
-                    <option>Pending</option>
-                    <option>Processing</option>
-                    <option>Shipped</option>
-                    <option>Delivered</option>
-                    <option>Cancelled</option>
+                  <select 
+                    value={orderStatus}
+                    onChange={(e) => setOrderStatus(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="processing">Processing</option>
+                    <option value="shipped">Shipped</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="cancelled">Cancelled</option>
                   </select>
                 </div>
 
@@ -323,31 +496,46 @@ export default function Admin() {
                       </tr>
                     </thead>
                     <tbody>
-                      {recentOrders.map((order) => (
-                        <tr key={order.id} className="border-b hover:bg-gray-50">
-                          <td className="py-3 px-4 font-medium">{order.id}</td>
-                          <td className="py-3 px-4">{order.customer}</td>
-                          <td className="py-3 px-4">{order.date}</td>
-                          <td className="py-3 px-4 font-semibold">${order.total}</td>
-                          <td className="py-3 px-4">
-                            <select
-                              defaultValue={order.status}
-                              className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            >
-                              <option>Pending</option>
-                              <option>Processing</option>
-                              <option>Shipped</option>
-                              <option>Delivered</option>
-                              <option>Cancelled</option>
-                            </select>
-                          </td>
-                          <td className="py-3 px-4">
-                            <button className="text-teal-500 hover:text-teal-600 font-medium">
-                              View Details
-                            </button>
+                      {loading ? (
+                        <tr>
+                          <td colSpan={6} className="py-8 text-center text-gray-600">
+                            Loading orders...
                           </td>
                         </tr>
-                      ))}
+                      ) : filteredOrders.length > 0 ? (
+                        filteredOrders.map((order) => (
+                          <tr key={order.id} className="border-b hover:bg-gray-50">
+                            <td className="py-3 px-4 font-medium">{order.id.substring(0, 8)}</td>
+                            <td className="py-3 px-4">{order.shipping_address?.full_name || 'N/A'}</td>
+                            <td className="py-3 px-4">{new Date(order.created_at).toLocaleDateString()}</td>
+                            <td className="py-3 px-4 font-semibold">${order.total_amount.toFixed(2)}</td>
+                            <td className="py-3 px-4">
+                              <select
+                                value={order.status}
+                                onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                                className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                              >
+                                <option value="pending">Pending</option>
+                                <option value="processing">Processing</option>
+                                <option value="shipped">Shipped</option>
+                                <option value="delivered">Delivered</option>
+                                <option value="cancelled">Cancelled</option>
+                              </select>
+                            </td>
+                            <td className="py-3 px-4">
+                              <button className="text-teal-500 hover:text-teal-600 font-medium">
+                                View Details
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={6} className="py-8 text-center text-gray-600">
+                            No orders found
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
