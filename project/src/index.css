@@ -71,23 +71,23 @@ body {
   overflow-x: hidden;
   margin: 0;
   padding: 0;
+  width: 100%;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+#root {
+  width: 100%;
+  overflow-x: hidden;
 }
 
 #smooth-scroll-wrapper {
   width: 100%;
-}
-
-.container {
-  max-width: 100% !important;
-  padding-left: 2rem !important;
-  padding-right: 2rem !important;
-}
-
-@media (max-width: 768px) {
-  .container {
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-  }
+  overflow-x: hidden;
 }
 
 * {
