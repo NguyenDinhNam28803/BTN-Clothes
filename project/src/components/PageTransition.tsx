@@ -2,7 +2,6 @@ import { motion, Transition } from 'framer-motion';
 import { useEffect, useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
-// Define a custom type for our transitions
 type CustomTransition = {
   name: string;
   initial: Record<string, number | string>;
