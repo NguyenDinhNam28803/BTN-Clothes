@@ -45,8 +45,11 @@ export default function Admin() {
   // Modal states
   const [showProductModal, setShowProductModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showOrderDetailModal, setShowOrderDetailModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
+  const [orderItems, setOrderItems] = useState<any[]>([]);
   
   // Form state
   const [productForm, setProductForm] = useState({
@@ -56,7 +59,7 @@ export default function Admin() {
     sale_price: '',
     category_id: '',
     status: 'active' as 'active' | 'inactive',
-    image_url: '',
+    images: [] as string[],
   });
   
   useEffect(() => {
@@ -176,11 +179,62 @@ export default function Admin() {
       
       if (error) throw error;
       
-      showToast('Order status updated', 'success');
+      showToast('Order status updated successfully', 'success');
       loadOrders();
+      
+      // Update viewing order if it's open
+      if (viewingOrder && viewingOrder.id === orderId) {
+        setViewingOrder({ ...viewingOrder, status: newStatus as any });
+      }
     } catch (error) {
       console.error('Error updating order:', error);
       showToast('Failed to update order status', 'error');
+    }
+  };
+  
+  const openOrderDetailModal = async (order: Order) => {
+    setViewingOrder(order);
+    setShowOrderDetailModal(true);
+    
+    // Load order items
+    try {
+      const { data, error } = await supabase
+        .from('order_items')
+        .select(`
+          *,
+          product:products(
+            id,
+            name,
+            images
+          )
+        `)
+        .eq('order_id', order.id);
+      
+      if (error) throw error;
+      setOrderItems(data || []);
+    } catch (error) {
+      console.error('Error loading order items:', error);
+      showToast('Failed to load order items', 'error');
+    }
+  };
+  
+  const handleCancelOrder = async (orderId: string) => {
+    if (!confirm('Are you sure you want to cancel this order?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'cancelled' })
+        .eq('id', orderId);
+      
+      if (error) throw error;
+      
+      showToast('Order cancelled successfully', 'success');
+      loadOrders();
+      setShowOrderDetailModal(false);
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      showToast('Failed to cancel order', 'error');
     }
   };
   
@@ -193,7 +247,7 @@ export default function Admin() {
       sale_price: '',
       category_id: '',
       status: 'active',
-      image_url: '',
+      images: [],
     });
     setShowProductModal(true);
   };
@@ -207,7 +261,7 @@ export default function Admin() {
       sale_price: product.sale_price?.toString() || '',
       category_id: product.category_id,
       status: product.status,
-      image_url: product.images[0] || '',
+      images: product.images || [],
     });
     setShowProductModal(true);
   };
@@ -228,7 +282,7 @@ export default function Admin() {
         sale_price: productForm.sale_price ? parseFloat(productForm.sale_price) : null,
         category_id: productForm.category_id,
         status: productForm.status,
-        image_url: productForm.image_url || null,
+        images: productForm.images || null,
       };
       
       if (editingProduct) {
@@ -684,7 +738,11 @@ export default function Admin() {
                               </select>
                             </td>
                             <td className="py-3 px-4">
-                              <button className="text-teal-500 hover:text-teal-600 font-medium">
+                              <button 
+                                onClick={() => openOrderDetailModal(order)}
+                                className="text-teal-500 hover:text-teal-600 font-medium flex items-center gap-1"
+                              >
+                                <Edit2 size={16} />
                                 View Details
                               </button>
                             </td>
@@ -808,14 +866,18 @@ export default function Admin() {
               </div>
               
               <div>
-                <label className="block text-sm font-semibold mb-2">Image URL</label>
+                <label className="block text-sm font-semibold mb-2">Image URLs (comma-separated)</label>
                 <input
-                  type="url"
-                  value={productForm.image_url}
-                  onChange={(e) => setProductForm({ ...productForm, image_url: e.target.value })}
+                  type="text"
+                  value={productForm.images.join(', ')}
+                  onChange={(e) => setProductForm({ 
+                    ...productForm, 
+                    images: e.target.value.split(',').map(url => url.trim()).filter(url => url !== '')
+                  })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="https://example.com/image.jpg"
+                  placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
                 />
+                <p className="text-xs text-gray-500 mt-1">Enter multiple image URLs separated by commas</p>
               </div>
               
               <div className="flex gap-3 pt-4">
@@ -868,6 +930,179 @@ export default function Admin() {
                 >
                   Delete
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Order Detail Modal */}
+      {showOrderDetailModal && viewingOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Order Details</h2>
+              <button
+                onClick={() => {
+                  setShowOrderDetailModal(false);
+                  setViewingOrder(null);
+                  setOrderItems([]);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Order Info */}
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Order Information</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Order ID:</span>
+                      <span className="font-medium">{viewingOrder.id.substring(0, 8)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Order Number:</span>
+                      <span className="font-medium">{viewingOrder.order_number}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Date:</span>
+                      <span className="font-medium">
+                        {new Date(viewingOrder.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Payment Method:</span>
+                      <span className="font-medium capitalize">{viewingOrder.payment_method}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Payment Status:</span>
+                      <span className={`font-medium ${
+                        viewingOrder.payment_status === 'paid' ? 'text-green-600' : 
+                        viewingOrder.payment_status === 'failed' ? 'text-red-600' : 
+                        'text-yellow-600'
+                      }`}>
+                        {viewingOrder.payment_status.charAt(0).toUpperCase() + viewingOrder.payment_status.slice(1)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Shipping Address</h3>
+                  <div className="space-y-1 text-gray-700">
+                    <p className="font-medium">{viewingOrder.shipping_address?.full_name}</p>
+                    <p>{viewingOrder.shipping_address?.phone}</p>
+                    <p>{viewingOrder.shipping_address?.address_line1}</p>
+                    {viewingOrder.shipping_address?.address_line2 && (
+                      <p>{viewingOrder.shipping_address.address_line2}</p>
+                    )}
+                    <p>
+                      {viewingOrder.shipping_address?.city}, {viewingOrder.shipping_address?.state}{' '}
+                      {viewingOrder.shipping_address?.postal_code}
+                    </p>
+                    <p>{viewingOrder.shipping_address?.country}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Order Status */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Order Status</h3>
+                <select
+                  value={viewingOrder.status}
+                  onChange={(e) => updateOrderStatus(viewingOrder.id, e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="processing">Processing</option>
+                  <option value="shipped">Shipped</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              
+              {/* Order Items */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Order Items</h3>
+                <div className="space-y-3">
+                  {orderItems.map((item) => (
+                    <div key={item.id} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
+                      <img
+                        src={item.product?.images?.[0] || 'https://via.placeholder.com/80'}
+                        alt={item.product?.name || 'Product'}
+                        className="w-20 h-20 object-cover rounded-lg"
+                      />
+                      <div className="flex-1">
+                        <h4 className="font-medium">{item.product?.name || 'Product'}</h4>
+                        <p className="text-sm text-gray-600">
+                          Size: {item.size || 'N/A'} | Color: {item.color || 'N/A'}
+                        </p>
+                        <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">${item.price.toFixed(2)}</p>
+                        <p className="text-sm text-gray-600">
+                          Total: ${(item.price * item.quantity).toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Order Summary */}
+              <div className="border-t pt-4">
+                <h3 className="text-lg font-semibold mb-3">Order Summary</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Subtotal:</span>
+                    <span className="font-medium">
+                      ${(viewingOrder.total_amount - (viewingOrder.discount_amount || 0)).toFixed(2)}
+                    </span>
+                  </div>
+                  {viewingOrder.discount_amount > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Discount:</span>
+                      <span className="font-medium">-${viewingOrder.discount_amount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {viewingOrder.voucher_code && (
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>Voucher Code:</span>
+                      <span className="font-mono">{viewingOrder.voucher_code}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-xl font-bold pt-2 border-t">
+                    <span>Total:</span>
+                    <span className="text-teal-600">${viewingOrder.total_amount.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Actions */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => {
+                    setShowOrderDetailModal(false);
+                    setViewingOrder(null);
+                    setOrderItems([]);
+                  }}
+                  className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Close
+                </button>
+                {viewingOrder.status !== 'cancelled' && viewingOrder.status !== 'delivered' && (
+                  <button
+                    onClick={() => handleCancelOrder(viewingOrder.id)}
+                    className="flex-1 px-6 py-3 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors"
+                  >
+                    Cancel Order
+                  </button>
+                )}
               </div>
             </div>
           </div>

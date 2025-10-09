@@ -1,9 +1,24 @@
-import { useState, useEffect } from 'react';
-import { CreditCard, MapPin, Truck, CheckCircle, Package, LogIn } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { CreditCard, MapPin, Truck, CheckCircle, Package, LogIn, ChevronUp, ChevronDown } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { useToast } from '../components/Toast';
+import { supabase } from '../lib/supabase';
+
+// Type definition for Address
+interface Address {
+  id: string;
+  user_id: string;
+  full_name: string;
+  phone: string;
+  address_line1: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  is_default: boolean;
+  created_at?: string;
+}
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -37,6 +52,8 @@ export default function Checkout() {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [appliedVoucher, setAppliedVoucher] = useState<string | null>(null);
+  const [saveAddressOption, setSaveAddressOption] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('credit_card');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Function to apply selected address to input form
