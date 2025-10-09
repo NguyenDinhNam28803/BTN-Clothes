@@ -1,4 +1,4 @@
-# Hướng dẫn cài đặt và sử dụng Supabase
+# Hướng dẫn cài đặt 
 
 Hướng dẫn này sẽ giúp các thành viên trong team cài đặt và sử dụng Supabase cho dự án BTN-Clothes, bao gồm cả môi trường local development và môi trường trực tuyến (cloud).
 
