@@ -27,46 +27,85 @@ export default function Orders() {
       return;
     }
     
-    const fetchOrders = () => {
+    const fetchOrders = async () => {
       setLoading(true);
       
-      setTimeout(() => {
-        const savedOrders = localStorage.getItem('ordersList');
+      try {
+        // Import supabase
+        const { supabase } = await import('../lib/supabase');
         
+        // Get all orders for this user
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching orders:', error);
+          throw error;
+        }
+        
+        if (!data || data.length === 0) {
+          setOrders([]);
+          setLoading(false);
+          return;
+        }
+        
+        console.log('Fetched orders:', data.length);
+        
+        // Transform data to match OrderSummary type
+        const orderSummaries: OrderSummary[] = data.map(order => ({
+          id: order.order_number || order.id,
+          date: order.created_at,
+          status: order.status as OrderStatus,
+          total: order.total_amount,
+          items_count: 0 // We'll update this in the next step
+        }));
+        
+        // Get all order items in one batch for better performance
+        const orderIds = data.map(order => order.id);
+        const { data: orderItemsData, error: itemsError } = await supabase
+          .from('order_items')
+          .select('order_id, quantity')
+          .in('order_id', orderIds);
+          
+        if (itemsError) {
+          console.error('Error fetching order items:', itemsError);
+        } else if (orderItemsData) {
+          // Group items by order_id and count them
+          const itemCountByOrderId = orderItemsData.reduce((acc, item) => {
+            if (!acc[item.order_id]) {
+              acc[item.order_id] = 0;
+            }
+            acc[item.order_id] += item.quantity || 1;
+            return acc;
+          }, {} as Record<string, number>);
+          
+          // Update item counts in our order summaries
+          orderSummaries.forEach(order => {
+            const orderId = data.find(o => o.order_number === order.id || o.id === order.id)?.id;
+            if (orderId && itemCountByOrderId[orderId]) {
+              order.items_count = itemCountByOrderId[orderId];
+            }
+          });
+        }
+        
+        console.log('Processed order summaries:', orderSummaries);
+        setOrders(orderSummaries);
+      } catch (error) {
+        console.error('Error loading orders:', error);
+        
+        // Fallback to localStorage if available
+        const savedOrders = localStorage.getItem('ordersList');
         if (savedOrders) {
           setOrders(JSON.parse(savedOrders));
         } else {
-          const mockOrders: OrderSummary[] = [
-            {
-              id: 'ORD-123456',
-              date: '2025-10-06T10:30:00Z',
-              status: 'shipped',
-              total: 50.39,
-              items_count: 1
-            },
-            {
-              id: 'ORD-123455',
-              date: '2025-09-28T14:15:00Z',
-              status: 'delivered',
-              total: 125.75,
-              items_count: 3
-            },
-            {
-              id: 'ORD-123454',
-              date: '2025-09-15T09:45:00Z',
-              status: 'cancelled',
-              total: 67.20,
-              items_count: 2
-            }
-          ];
-          setOrders(mockOrders);
-          
-          // Save to localStorage for persistence
-          localStorage.setItem('ordersList', JSON.stringify(mockOrders));
+          setOrders([]);
         }
-        
+      } finally {
         setLoading(false);
-      }, 800);
+      }
     };
 
     fetchOrders();

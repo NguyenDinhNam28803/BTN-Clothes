@@ -77,7 +77,7 @@ export default function PageTransition({ children }: { children: React.ReactNode
       exit={currentTransition.exit}
       transition={currentTransition.transition}
       style={{ willChange: 'transform, opacity' }}
-      className="w-full"
+      className="w-full m-0 p-0 overflow-x-hidden"
     >
       {children}
     </motion.div>

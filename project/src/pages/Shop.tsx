@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Grid2x2 as Grid, List, SlidersHorizontal, ShoppingCart, Tag } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -20,6 +20,7 @@ export default function Shop() {
   const [categories, setCategories] = useState<Record<string, string>>({});
   const [activeVoucher, setActiveVoucher] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const { addToCart } = useCart();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
@@ -29,6 +30,18 @@ export default function Shop() {
     loadInitialData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  
+  // Check for focusSearch and category parameters in URL
+  useEffect(() => {
+    if (searchParams.get('focusSearch') === 'true' && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+    
+    const categoryFromURL = searchParams.get('category');
+    if (categoryFromURL && ['all', 'men', 'women', 'kids', 'accessories'].includes(categoryFromURL)) {
+      setSelectedCategory(categoryFromURL);
+    }
+  }, [searchParams]);
   
   // Xử lý voucher từ URL
   useEffect(() => {
@@ -257,6 +270,7 @@ export default function Shop() {
                   </button>
 
                   <input
+                    ref={searchInputRef}
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}

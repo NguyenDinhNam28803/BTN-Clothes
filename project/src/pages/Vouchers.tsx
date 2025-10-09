@@ -1,84 +1,146 @@
-import { Copy, Tag, Calendar, CheckCircle } from 'lucide-react';
+import { Copy, Tag, Calendar, CheckCircle, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { Voucher } from '../types';
+
+// Enhanced voucher interface with UI specific fields
+interface UIVoucher {
+  id: string;
+  code: string;
+  title: string;
+  description: string;
+  discount: string;
+  minOrder: number;
+  validUntil: string;
+  type: 'percentage' | 'fixed' | 'shipping';
+  collected: boolean;
+}
 
 export default function Vouchers() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
-  const [collectedVouchers, setCollectedVouchers] = useState<number[]>([]);
+  const [collectedVouchers, setCollectedVouchers] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
   const { getCartCount } = useCart();
-
-  const initialVouchers = [
-    {
-      id: 1,
-      code: 'WELCOME20',
-      title: 'Welcome Gift',
-      description: '20% off your first order',
-      discount: '20% OFF',
-      minOrder: 50,
-      validUntil: '2024-12-31',
-      type: 'percentage',
-      collected: false,
-    },
-    {
-      id: 2,
-      code: 'FREESHIP',
-      title: 'Free Shipping',
-      description: 'Free shipping on all orders',
-      discount: 'FREE SHIP',
-      minOrder: 30,
-      validUntil: '2024-11-30',
-      type: 'shipping',
-      collected: false,
-    },
-    {
-      id: 3,
-      code: 'SAVE50',
-      title: '$50 Off',
-      description: '$50 discount on orders over $200',
-      discount: '$50 OFF',
-      minOrder: 200,
-      validUntil: '2024-12-15',
-      type: 'fixed',
-      collected: false,
-    },
-    {
-      id: 4,
-      code: 'FLASH30',
-      title: 'Flash Sale',
-      description: '30% off all items',
-      discount: '30% OFF',
-      minOrder: 0,
-      validUntil: '2024-10-31',
-      type: 'percentage',
-      collected: false,
-    },
-  ];
+  const { user } = useAuth();
   
-  const [vouchers, setVouchers] = useState(initialVouchers);
+  // Use an empty array as initial state
+  const [vouchers, setVouchers] = useState<UIVoucher[]>([]);
   const [activeTab, setActiveTab] = useState('All Vouchers');
   const [showMessage, setShowMessage] = useState(false);
   const [message, setMessage] = useState('');
 
-  // Load collected vouchers from localStorage
+  // Load vouchers and collected status
   useEffect(() => {
-    const savedVouchers = localStorage.getItem('collectedVouchers');
-    if (savedVouchers) {
+    const fetchVouchers = async () => {
+      setLoading(true);
       try {
-        const ids = JSON.parse(savedVouchers);
-        setCollectedVouchers(ids);
+        console.log('Fetching vouchers from database');
         
-        // Update vouchers with collected state
-        setVouchers(prev => prev.map(voucher => ({
-          ...voucher,
-          collected: ids.includes(voucher.id)
-        })));
-      } catch (err) {
-        console.error('Error parsing saved vouchers:', err);
+        // Get all active vouchers
+        const { data: voucherData, error: voucherError } = await supabase
+          .from('vouchers')
+          .select('*')
+          .eq('is_active', true)
+          .lte('valid_from', new Date().toISOString())
+          .gte('valid_until', new Date().toISOString());
+          
+        if (voucherError) {
+          console.error('Error fetching vouchers:', voucherError);
+          throw voucherError;
+        }
+        
+        console.log('Fetched vouchers:', voucherData);
+        
+        // Get user's collected vouchers if logged in
+        let userVouchers: {voucher_id: string, is_used: boolean}[] = [];
+        
+        if (user) {
+          const { data: userVoucherData, error: userVoucherError } = await supabase
+            .from('user_vouchers')
+            .select('voucher_id, is_used')
+            .eq('user_id', user.id);
+            
+          if (userVoucherError) {
+            console.error('Error fetching user vouchers:', userVoucherError);
+          } else if (userVoucherData) {
+            userVouchers = userVoucherData;
+            console.log('User vouchers:', userVoucherData);
+            
+            // Save collected voucher IDs to state
+            const collectedIds = userVoucherData.map(uv => uv.voucher_id);
+            setCollectedVouchers(collectedIds);
+          }
+        } else {
+          // If not logged in, get from localStorage
+          const savedVouchers = localStorage.getItem('collectedVouchers');
+          if (savedVouchers) {
+            try {
+              const ids = JSON.parse(savedVouchers);
+              // Ensure all IDs are strings
+              const stringIds = ids.map((id: any) => String(id));
+              setCollectedVouchers(stringIds);
+            } catch (err) {
+              console.error('Error parsing saved vouchers:', err);
+            }
+          }
+        }
+        
+        // Transform vouchers to UI format
+        if (voucherData) {
+          const transformedVouchers: UIVoucher[] = voucherData.map(voucher => {
+            // Determine type based on database values
+            let voucherType: 'percentage' | 'fixed' | 'shipping' = 'fixed';
+            let discountDisplay = '';
+            
+            if (voucher.discount_type === 'percentage') {
+              voucherType = 'percentage';
+              discountDisplay = `${voucher.discount_value}% OFF`;
+            } else if (voucher.discount_value === 10 && voucher.code.includes('SHIP')) {
+              voucherType = 'shipping';
+              discountDisplay = 'FREE SHIP';
+            } else {
+              discountDisplay = `$${voucher.discount_value} OFF`;
+            }
+            
+            // Create title based on code or description
+            let title = voucher.code;
+            if (voucher.description.includes('off')) {
+              title = voucher.description.split(' off')[0].trim() + ' Off';
+            } else if (voucher.description.includes('Free')) {
+              title = 'Free Shipping';
+            }
+            
+            return {
+              id: voucher.id,
+              code: voucher.code,
+              title: title,
+              description: voucher.description,
+              discount: discountDisplay,
+              minOrder: voucher.min_order_value,
+              validUntil: new Date(voucher.valid_until).toLocaleDateString(),
+              type: voucherType,
+              collected: collectedVouchers.includes(voucher.id) || userVouchers.some(uv => uv.voucher_id === voucher.id)
+            };
+          });
+          
+          console.log('Transformed vouchers:', transformedVouchers);
+          setVouchers(transformedVouchers);
+        }
+      } catch (error) {
+        console.error('Error in fetchVouchers:', error);
+        // Fallback to empty array if fetch fails
+        setVouchers([]);
+      } finally {
+        setLoading(false);
       }
-    }
-  }, []);
+    };
+    
+    fetchVouchers();
+  }, [user]);
 
   const handleCopy = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -87,13 +149,34 @@ export default function Vouchers() {
     showNotification('Voucher copied to clipboard!');
   };
   
-  const collectVoucher = (id: number) => {
-    // Update vouchers
+  const collectVoucher = async (id: string) => {
+    // Update vouchers in UI
     setVouchers(prev => prev.map(voucher => 
       voucher.id === id ? { ...voucher, collected: true } : voucher
     ));
     
-    // Save to localStorage
+    // Save to user_vouchers table if logged in
+    if (user) {
+      try {
+        const { error } = await supabase
+          .from('user_vouchers')
+          .insert({
+            user_id: user.id,
+            voucher_id: id,
+            is_used: false
+            // No need to set collected_at, will use created_at which has a DEFAULT now() constraint
+          });
+          
+        if (error) {
+          console.error('Error saving collected voucher to database:', error);
+          // Continue anyway, will save to localStorage as fallback
+        }
+      } catch (error) {
+        console.error('Exception saving voucher:', error);
+      }
+    }
+    
+    // Save to localStorage as backup/for non-logged in users
     const updatedCollected = [...collectedVouchers, id];
     setCollectedVouchers(updatedCollected);
     localStorage.setItem('collectedVouchers', JSON.stringify(updatedCollected));
@@ -180,7 +263,22 @@ export default function Vouchers() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-          {vouchers
+          {loading ? (
+            <div className="col-span-2 py-20 flex items-center justify-center">
+              <div className="text-center">
+                <Loader2 className="h-12 w-12 animate-spin text-teal-500 mx-auto mb-4" />
+                <p className="text-xl text-gray-600">Loading vouchers...</p>
+              </div>
+            </div>
+          ) : vouchers.length === 0 ? (
+            <div className="col-span-2 py-20 flex items-center justify-center">
+              <div className="text-center">
+                <Tag className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-xl text-gray-600">No vouchers available</p>
+                <p className="text-gray-500 mt-2">Check back soon for new deals!</p>
+              </div>
+            </div>
+          ) : vouchers
             .filter(voucher => {
               if (activeTab === 'All Vouchers') return true;
               if (activeTab === 'Collected') return voucher.collected;

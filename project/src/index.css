@@ -69,10 +69,25 @@ html.lenis {
 body {
   font-family: 'Inter', sans-serif;
   overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+#root {
+  width: 100%;
+  overflow-x: hidden;
 }
 
 #smooth-scroll-wrapper {
   width: 100%;
+  overflow-x: hidden;
 }
 
 * {

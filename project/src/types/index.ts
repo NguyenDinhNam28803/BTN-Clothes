@@ -95,6 +95,7 @@ export interface Voucher {
   valid_until: string;
   is_active: boolean;
   created_at: string;
+  is_used?: boolean; // Whether the current user has used this voucher
 }
 
 export interface Review {
@@ -113,7 +114,6 @@ export interface Review {
 export interface Address {
   id: string;
   user_id: string;
-  address_type: string;
   full_name: string;
   phone: string;
   address_line1: string;
@@ -125,4 +125,6 @@ export interface Address {
   is_default: boolean;
   created_at: string;
   updated_at: string;
+  // Virtual field (not stored in DB)
+  address_type?: string;
 }

@@ -28,30 +28,32 @@ function AppContent() {
 
   return (
     <SmoothScroll>
-      <CustomCursor />
-      <TransitionLoader />
-      <Header />
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<PageTransition><Home /></PageTransition>} />
-          <Route path="/shop" element={<PageTransition><Shop /></PageTransition>} />
-          <Route path="/men" element={<PageTransition><Shop /></PageTransition>} />
-          <Route path="/women" element={<PageTransition><Shop /></PageTransition>} />
-          <Route path="/kids" element={<PageTransition><Shop /></PageTransition>} />
-          <Route path="/accessories" element={<PageTransition><Shop /></PageTransition>} />
-          <Route path="/sale" element={<PageTransition><Shop /></PageTransition>} />
-          <Route path="/product/:id" element={<PageTransition><ProductDetail /></PageTransition>} />
-          <Route path="/cart" element={<PageTransition><Cart /></PageTransition>} />
-          <Route path="/wishlist" element={<PageTransition><Wishlist /></PageTransition>} />
-          <Route path="/vouchers" element={<PageTransition><Vouchers /></PageTransition>} />
-          <Route path="/checkout" element={<PageTransition><Checkout /></PageTransition>} />
-          <Route path="/account" element={<PageTransition><Account /></PageTransition>} />
-          <Route path="/admin" element={<PageTransition><Admin /></PageTransition>} />
-          <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
-          <Route path="/register" element={<PageTransition><Login /></PageTransition>} />
-        </Routes>
-      </AnimatePresence>
-      <Footer />
+      <div className="w-full m-0 p-0 overflow-x-hidden">
+        <CustomCursor />
+        <TransitionLoader />
+        <Header />
+        <AnimatePresence mode="wait">
+          <Routes location={location} key={location.pathname}>
+            <Route path="/" element={<PageTransition><Home /></PageTransition>} />
+            <Route path="/shop" element={<PageTransition><Shop /></PageTransition>} />
+            <Route path="/men" element={<PageTransition><Shop /></PageTransition>} />
+            <Route path="/women" element={<PageTransition><Shop /></PageTransition>} />
+            <Route path="/kids" element={<PageTransition><Shop /></PageTransition>} />
+            <Route path="/accessories" element={<PageTransition><Shop /></PageTransition>} />
+            <Route path="/sale" element={<PageTransition><Shop /></PageTransition>} />
+            <Route path="/product/:id" element={<PageTransition><ProductDetail /></PageTransition>} />
+            <Route path="/cart" element={<PageTransition><Cart /></PageTransition>} />
+            <Route path="/wishlist" element={<PageTransition><Wishlist /></PageTransition>} />
+            <Route path="/vouchers" element={<PageTransition><Vouchers /></PageTransition>} />
+            <Route path="/checkout" element={<PageTransition><Checkout /></PageTransition>} />
+            <Route path="/account" element={<PageTransition><Account /></PageTransition>} />
+            <Route path="/admin" element={<PageTransition><Admin /></PageTransition>} />
+            <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
+            <Route path="/register" element={<PageTransition><Login /></PageTransition>} />
+          </Routes>
+        </AnimatePresence>
+        <Footer />
+      </div>
     </SmoothScroll>
   );
 }

@@ -33,5 +33,12 @@ export default function SmoothScroll({ children }: SmoothScrollProps) {
     };
   }, []);
 
-  return <div id="smooth-scroll-wrapper">{children}</div>;
+  return (
+    <div 
+      id="smooth-scroll-wrapper" 
+      className="m-0 p-0 w-full overflow-x-hidden"
+    >
+      {children}
+    </div>
+  );
 }

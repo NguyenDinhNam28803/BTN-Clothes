@@ -154,11 +154,11 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen">
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+    <div className="min-h-screen w-screen max-w-[100vw] overflow-x-hidden">
+      <section className="relative min-h-screen w-full flex items-center justify-center overflow-hidden">
         <video
           className="absolute inset-0 z-0 w-full h-full object-cover"
-          style={{ filter: 'blur(2px)' }}
+          style={{ objectFit: 'cover' }}
           src="src/Assets/IMG/BTN.mp4"
           autoPlay
           loop
@@ -202,7 +202,7 @@ export default function Home() {
       </section>
 
       <section
-        className="py-20 relative"
+        className="py-20 relative w-full"
         data-scroll
       >
         <div
@@ -213,7 +213,7 @@ export default function Home() {
           }}
         />
 
-        <div className="container mx-auto px-4 relative z-10">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16" data-aos="fade-up">
             <h2 className="text-4xl md:text-5xl font-serif mb-4">Featured Categories</h2>
             <p className="text-gray-600 text-lg">Explore our curated collections</p>
@@ -269,8 +269,8 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4">
+      <section className="py-20 bg-white w-full">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16" data-aos="fade-up">
             <div className="flex items-center justify-center gap-2 mb-4">
               <Sparkles className="text-teal-500" />
@@ -373,7 +373,7 @@ export default function Home() {
       </section>
 
       <section
-        className="py-20 relative"
+        className="py-20 relative w-full"
         data-scroll
       >
         <div
@@ -384,7 +384,7 @@ export default function Home() {
           }}
         />
 
-        <div className="container mx-auto px-4 relative z-10">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16">
             <div className="flex items-center justify-center gap-2 mb-4">
               <TrendingUp className="text-red-500" size={32} />
@@ -483,8 +483,8 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-20 bg-gray-900 text-white" data-scroll>
-        <div className="container mx-auto px-4">
+      <section className="py-20 bg-gray-900 text-white w-full" data-scroll>
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="w-20 h-20 bg-teal-500 rounded-full flex items-center justify-center mx-auto mb-4">
