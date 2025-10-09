@@ -28,12 +28,11 @@ function AppContent() {
 
   return (
     <SmoothScroll>
-      <div className="w-full m-0 p-0 overflow-x-hidden">
+      <div className="w-full min-h-screen m-0 p-0">
         <CustomCursor />
-        <TransitionLoader />
         <Header />
         <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
+          <Routes location={location} key={location.pathname}>  
             <Route path="/" element={<PageTransition><Home /></PageTransition>} />
             <Route path="/shop" element={<PageTransition><Shop /></PageTransition>} />
             <Route path="/men" element={<PageTransition><Shop /></PageTransition>} />
@@ -58,16 +57,10 @@ function AppContent() {
   );
 }
 
+const hasVisitedBefore = sessionStorage.getItem('hasVisited');
+
 function App() {
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const hasVisited = sessionStorage.getItem('hasVisited');
-    if (hasVisited) {
-      setIsLoading(false);
-    }
-  }, []);
-
+  const [isLoading, setIsLoading] = useState(!hasVisitedBefore);
   const handleLoadComplete = () => {
     setIsLoading(false);
     sessionStorage.setItem('hasVisited', 'true');

@@ -8,10 +8,12 @@ import 'aos/dist/aos.css';
 function AppWrapper() {
   useEffect(() => {
     AOS.init({
-      duration: 800,
-      once: true,
-      offset: 100,
-      easing: 'ease-in-out',
+      duration: 1000,
+      once: false,
+      easing: 'ease-out',
+      disable: 'mobile',
+      offset: 120,
+      mirror: false
     });
   }, []);
 
