@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useCart } from '../contexts/CartContext';
 import { supabase } from '../lib/supabase';
+
 // Define order status types
 type OrderStatus = 'processing' | 'shipped' | 'delivered' | 'cancelled';
 

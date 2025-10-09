@@ -28,7 +28,7 @@ function AppContent() {
 
   return (
     <SmoothScroll>
-      <div className="w-full min-h-screen overflow-x-hidden">
+      <div className="w-full m-0 p-0 overflow-x-hidden">
         <CustomCursor />
         <TransitionLoader />
         <Header />
@@ -59,16 +59,18 @@ function AppContent() {
 }
 
 function App() {
-  const [isLoading, setIsLoading] = useState(() => {
-    // Kiểm tra ngay từ đầu
-    return !sessionStorage.getItem('hasVisited');
-  });
+  const [isLoading, setIsLoading] = useState(true);
 
-  
+  useEffect(() => {
+    const hasVisited = sessionStorage.getItem('hasVisited');
+    if (hasVisited) {
+      setIsLoading(false);
+    }
+  }, []);
 
   const handleLoadComplete = () => {
-    sessionStorage.setItem('hasVisited', 'true');
     setIsLoading(false);
+    sessionStorage.setItem('hasVisited', 'true');
   };
 
   return (
@@ -77,11 +79,10 @@ function App() {
         <CartProvider>
           <WishlistProvider>
             <ToastProvider>
-              {isLoading ? (
-                <LoadingScreen onLoadComplete={handleLoadComplete} />
-              ) : (
-                <AppContent />
-              )}
+              <AnimatePresence mode="wait">
+                {isLoading && <LoadingScreen onLoadComplete={handleLoadComplete} />}
+              </AnimatePresence>
+              {!isLoading && <AppContent />}
             </ToastProvider>
           </WishlistProvider>
         </CartProvider>
