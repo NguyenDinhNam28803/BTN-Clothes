@@ -4,7 +4,7 @@
   ## Purpose
   Insert accessories products based on the available images
 
-  ## Data Inserted
+  ## Data Inserted`
   - Accessories category products
   - Product variants for accessories
 */
