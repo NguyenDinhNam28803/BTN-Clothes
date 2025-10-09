@@ -159,7 +159,7 @@ export default function Home() {
         <video
           className="absolute inset-0 z-0 w-full h-full object-cover"
           style={{ objectFit: 'cover' }}
-          src="src/Assets/IMG/BTN.mp4"
+          src="/src/Assets/IMG/BTN.mp4"
           autoPlay
           loop
           muted

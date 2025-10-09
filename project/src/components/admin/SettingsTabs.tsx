@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { useToast } from '../Toast';
 import { supabase } from '../../lib/supabase';
-import { createSettingsTable } from '../../utils/createSettingsTable';
 
 interface SettingsTab {
   id: string;
@@ -295,31 +294,11 @@ export default function SettingsTabs() {
         .from('settings')
         .select('count(*)', { count: 'exact', head: true });
         
-      // If the table doesn't exist, try to create it using our utility function
+      // If the table doesn't exist, show error message
       if (checkError && checkError.code === 'PGRST285') {
-        showToast('Bảng cài đặt không tồn tại. Đang thử tạo bảng...', 'info');
-        
-        try {
-          // Try to create the settings table
-          const success = await createSettingsTable();
-          
-          if (!success) {
-            setErrorState('Không thể tạo bảng cài đặt. Vui lòng liên hệ quản trị viên.');
-            showToast('Không thể tạo bảng cài đặt', 'error');
-            return;
-          }
-          
-          showToast('Đã tạo bảng cài đặt thành công!', 'success');
-          
-          // Try to fetch settings again after creating the table
-          await fetchSettings();
-          return;
-        } catch (err) {
-          console.error('Exception creating settings table:', err);
-          setErrorState('Không thể tạo bảng cài đặt. Vui lòng liên hệ quản trị viên.');
-          showToast('Không thể tạo bảng cài đặt', 'error');
-          return;
-        }
+        setErrorState('Bảng cài đặt không tồn tại. Vui lòng chạy migration để tạo bảng.');
+        showToast('Bảng cài đặt không tồn tại', 'error');
+        return;
       }
       
       const updateSetting = async (key: string, value: Record<string, unknown>) => {
