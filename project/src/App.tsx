@@ -12,6 +12,7 @@ import LoadingScreen from './components/LoadingScreen';
 import PageTransition from './components/PageTransition';
 import TransitionLoader from './components/TransitionLoader';
 import SmoothScroll from './components/SmoothScroll';
+import LuxuryAnimations from './lib/luxuryAnimations';
 import Home from './pages/Home';
 import Shop from './pages/Shop';
 import Cart from './pages/Cart';
@@ -25,11 +26,29 @@ import Admin from './pages/Admin';
 
 function AppContent() {
   const location = useLocation();
+  
+  // Log status về kết nối cục bộ
+  useEffect(() => {
+    console.log("Môi trường Vite:", import.meta.env.MODE);
+    console.log("Đang sử dụng Supabase cục bộ (Docker) thay vì biến môi trường");
+    console.log("URL: http://127.0.0.1:54321");
+  }, []);
+  
+  // Initialize luxury animations whenever the route changes
+  useEffect(() => {
+    // Small timeout to ensure DOM elements are fully rendered
+    const timer = setTimeout(() => {
+      LuxuryAnimations.refreshAnimations();
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
 
   return (
     <SmoothScroll>
-      <div className="w-full min-h-screen m-0 p-0">
+      <div className="w-full min-h-screen m-0 p-0 bg-luxury-pattern">
         <CustomCursor />
+        <TransitionLoader />
         <Header />
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>  

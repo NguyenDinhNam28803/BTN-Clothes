@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useCart } from '../contexts/CartContext';
 import { supabase } from '../lib/supabase';
+import { getProductImage, getProductImages } from '../data/productImages';
 
 // Define order status types
 type OrderStatus = 'processing' | 'shipped' | 'delivered' | 'cancelled';
@@ -83,6 +84,53 @@ export default function Account() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // Delete a voucher
+  const deleteVoucher = async (voucherId: string) => {
+    try {
+      setIsSubmitting(true);
+      
+      if (!user) {
+        showToast('You must be logged in to delete vouchers', 'error');
+        return;
+      }
+      
+      // Find the user_voucher record for this voucher
+      const { data: userVoucherData, error: fetchError } = await supabase
+        .from('user_vouchers')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('voucher_id', voucherId)
+        .single();
+      
+      if (fetchError) {
+        console.error('Error finding user voucher:', fetchError);
+        throw fetchError;
+      }
+      
+      if (!userVoucherData) {
+        throw new Error('Voucher not found');
+      }
+      
+      // Delete the voucher from user_vouchers table
+      const { error } = await supabase
+        .from('user_vouchers')
+        .delete()
+        .eq('id', userVoucherData.id);
+      
+      if (error) throw error;
+      
+      // Update the UI immediately
+      setUserVouchers(prev => prev.filter(v => v.id !== voucherId));
+      
+      showToast('Voucher deleted successfully', 'success');
+    } catch (error) {
+      console.error('Error deleting voucher:', error);
+      showToast('Failed to delete voucher', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Handle profile form changes
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -1464,7 +1512,40 @@ export default function Account() {
                         >
                           <div className="relative aspect-[3/4] bg-gray-100 overflow-hidden">
                             <img
-                              src={item.product?.images?.[0] || '/placeholder-product.jpg'}
+                              src={(() => {
+                                // Try to get product image using helper functions
+                                if (item.product?.id) {
+                                  // First try to get by product ID
+                                  const productImages = getProductImages(item.product.id);
+                                  if (productImages.length > 0) {
+                                    return productImages[0];
+                                  }
+                                  
+                                  // Then try to get by image path
+                                  if (item.product?.images) {
+                                    // Parse images if they're stored as a JSON string
+                                    let imageArray: string[] = [];
+                                    if (typeof item.product.images === 'string') {
+                                      try {
+                                        imageArray = JSON.parse(item.product.images);
+                                      } catch (e) {
+                                        console.error('Error parsing product images:', e);
+                                        imageArray = [];
+                                      }
+                                    } else if (Array.isArray(item.product.images)) {
+                                      imageArray = item.product.images;
+                                    }
+                                    
+                                    if (imageArray.length > 0) {
+                                      const imagePath = getProductImage(imageArray[0]);
+                                      if (imagePath) return imagePath;
+                                      return imageArray[0];
+                                    }
+                                  }
+                                }
+                                // Fallback to placeholder
+                                return 'https://images.pexels.com/photos/1926769/pexels-photo-1926769.jpeg?auto=compress&cs=tinysrgb&w=400';
+                              })()}
                               alt={item.product?.name || 'Product'}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             />
@@ -1590,7 +1671,15 @@ export default function Account() {
                           key={voucher.id}
                           className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-all"
                         >
-                          <div className="flex flex-col md:flex-row">
+                          <div className="relative flex flex-col md:flex-row">
+                            <button
+                              onClick={() => deleteVoucher(voucher.id)}
+                              className="absolute top-2 right-2 p-1 rounded-full bg-white bg-opacity-80 text-red-500 hover:text-red-600 hover:bg-opacity-100 transition-colors"
+                              aria-label="Delete voucher"
+                              disabled={isSubmitting}
+                            >
+                              <Trash2 size={18} />
+                            </button>
                             <div className={`p-6 md:w-1/4 flex items-center justify-center bg-gradient-to-br ${
                               voucher.discount_type === 'percentage' ? 'from-teal-400 to-teal-600' : 'from-yellow-400 to-yellow-600'
                             }`}>
@@ -1640,6 +1729,14 @@ export default function Account() {
                                 >
                                   Use Now
                                 </Link>
+                                <button
+                                  onClick={() => deleteVoucher(voucher.id)}
+                                  className="flex items-center gap-2 text-red-500 hover:text-red-600 font-medium ml-auto"
+                                  disabled={isSubmitting}
+                                >
+                                  <Trash2 size={16} />
+                                  Delete
+                                </button>
                               </div>
                             </div>
                           </div>

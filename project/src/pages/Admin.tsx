@@ -1755,10 +1755,30 @@ export default function Admin() {
                       <span className="text-gray-600">Tên sản phẩm:</span>
                       <span className="font-medium">{viewingReview.product?.name || 'N/A'}</span>
                     </div>
-                    {viewingReview.product?.images && viewingReview.product.images.length > 0 && (
+                    {viewingReview.product?.images && (
                       <div className="mt-4">
                         <img
-                          src={viewingReview.product.images[0]}
+                          src={(() => {
+                            // Parse images if they're stored as a JSON string
+                            if (viewingReview.product?.images) {
+                              let imageArray: string[] = [];
+                              if (typeof viewingReview.product.images === 'string') {
+                                try {
+                                  imageArray = JSON.parse(viewingReview.product.images);
+                                } catch (e) {
+                                  console.error('Error parsing product images:', e);
+                                  return 'https://images.pexels.com/photos/1926769/pexels-photo-1926769.jpeg?auto=compress&cs=tinysrgb&w=200';
+                                }
+                              } else if (Array.isArray(viewingReview.product.images)) {
+                                imageArray = viewingReview.product.images;
+                              }
+                              
+                              return imageArray.length > 0 
+                                ? imageArray[0]
+                                : 'https://images.pexels.com/photos/1926769/pexels-photo-1926769.jpeg?auto=compress&cs=tinysrgb&w=200';
+                            }
+                            return 'https://images.pexels.com/photos/1926769/pexels-photo-1926769.jpeg?auto=compress&cs=tinysrgb&w=200';
+                          })()}
                           alt={viewingReview.product.name}
                           className="w-20 h-20 object-cover rounded-lg"
                         />

@@ -219,22 +219,22 @@ export default function Vouchers() {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-16">
+    <div className="min-h-screen pt-24 pb-16 bg-voucher-pattern">
       <div
-        className="absolute inset-0 z-0"
+        className="absolute inset-0 z-0 opacity-70"
         style={{
-          backgroundImage: 'radial-gradient(125% 125% at 50% 90%, #ffffff 40%, #f59e0b 100%)',
+          backgroundImage: 'linear-gradient(to bottom, rgba(245, 243, 238, 0.9) 0%, rgba(245, 243, 238, 0.7) 100%)',
           backgroundSize: '100% 100%',
         }}
       />
 
       <div className="container mx-auto px-4 relative z-10">
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Tag className="text-yellow-500" size={40} />
-            <h1 className="text-4xl md:text-5xl font-serif">Vouchers & Deals</h1>
+        <div className="text-center mb-12 bg-wishlist-header p-8 rounded-xl">
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <Tag className="text-olive-gold" size={40} />
+            <h1 className="text-4xl md:text-5xl font-cormorant font-light tracking-wide text-deep-navy">Exclusive Vouchers</h1>
           </div>
-          <p className="text-gray-600 text-lg">Save more with our exclusive vouchers</p>
+          <p className="text-deep-navy/70 font-montserrat text-sm tracking-wider uppercase mt-4">Elevate your shopping experience with premium savings</p>
         </div>
 
         {/* Success notification */}
@@ -291,17 +291,17 @@ export default function Vouchers() {
               <div
                 key={voucher.id}
                 data-cursor="sale"
-                className={`bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all ${voucher.collected ? 'border-2 border-green-500' : ''}`}
+                className={`bg-white/90 backdrop-blur-sm rounded-xl bg-voucher-card shadow-lg overflow-hidden hover:shadow-xl transition-all ${voucher.collected ? 'border border-olive-gold/50' : 'border border-olive-gold/10'}`}
               >
                 <div className="flex">
                   <div
-                    className={`w-32 flex items-center justify-center text-white font-bold text-2xl ${
+                    className={`w-32 flex items-center justify-center text-white font-cormorant font-medium text-2xl ${
                       voucher.type === 'percentage'
-                        ? 'bg-gradient-to-br from-red-500 to-pink-500'
+                        ? 'bg-gradient-to-br from-olive-gold to-muted-rust'
                         : voucher.type === 'shipping'
-                        ? 'bg-gradient-to-br from-blue-500 to-cyan-500'
-                        : 'bg-gradient-to-br from-purple-500 to-indigo-500'
-                    }`}
+                        ? 'bg-gradient-to-br from-deep-navy to-sage-green'
+                        : 'bg-gradient-to-br from-deep-navy to-olive-gold'
+                    } bg-discount-badge`}
                     style={{
                       clipPath: 'polygon(0 0, 100% 0, 85% 50%, 100% 100%, 0 100%)',
                     }}

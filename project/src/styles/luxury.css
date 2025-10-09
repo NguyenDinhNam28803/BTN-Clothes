@@ -1,0 +1,78 @@
+/* Luxury Animation Styles */
+
+/* Fade in with elegant timing */
+.luxury-fade-in {
+  animation: luxuryFadeIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes luxuryFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Smooth hover transitions */
+.luxury-hover {
+  transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Subtle parallax effect */
+.luxury-parallax {
+  transition: transform 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+}
+.luxury-parallax:hover {
+  transform: translateY(-5px);
+}
+
+/* Elegant button hover effect */
+.btn-luxury {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.btn-luxury::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 0;
+  background-color: currentColor;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  opacity: 0.1;
+  z-index: -1;
+}
+
+.btn-luxury:hover::after {
+  height: 100%;
+}
+
+/* Custom styled scrollbar */
+.luxury-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.luxury-scrollbar::-webkit-scrollbar-track {
+  background: #f5f2eb;
+}
+
+.luxury-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #C9B27C;
+  border-radius: 20px;
+}
+
+/* Card hover effect */
+.luxury-card {
+  transform: perspective(1000px) rotateY(0deg);
+  transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.luxury-card:hover {
+  transform: perspective(1000px) rotateY(5deg);
+}

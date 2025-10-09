@@ -5,6 +5,18 @@
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 
 -- Policy 1: Cho phép tất cả người dùng đọc (SELECT) sản phẩm active
+-- First drop the policy if it exists (will cause error if it doesn't exist, but we'll handle that)
+DO $$
+BEGIN
+    BEGIN
+        DROP POLICY "Anyone can view active products" ON products;
+    EXCEPTION
+        WHEN undefined_object THEN
+            -- Policy doesn't exist, so we do nothing
+    END;
+END $$;
+
+-- Then create the new policy
 CREATE POLICY "Anyone can view active products"
 ON products
 FOR SELECT
@@ -17,9 +29,9 @@ FOR INSERT
 TO authenticated
 WITH CHECK (
   EXISTS (
-    SELECT 1 FROM users
-    WHERE users.id = auth.uid()
-    AND users.role = 'admin'
+    SELECT 1 FROM profiles
+    WHERE profiles.id = auth.uid()
+    AND profiles.is_admin = true
   )
 );
 
@@ -30,16 +42,16 @@ FOR UPDATE
 TO authenticated
 USING (
   EXISTS (
-    SELECT 1 FROM users
-    WHERE users.id = auth.uid()
-    AND users.role = 'admin'
+    SELECT 1 FROM profiles
+    WHERE profiles.id = auth.uid()
+    AND profiles.is_admin = true
   )
 )
 WITH CHECK (
   EXISTS (
-    SELECT 1 FROM users
-    WHERE users.id = auth.uid()
-    AND users.role = 'admin'
+    SELECT 1 FROM profiles
+    WHERE profiles.id = auth.uid()
+    AND profiles.is_admin = true
   )
 );
 
@@ -50,9 +62,9 @@ FOR DELETE
 TO authenticated
 USING (
   EXISTS (
-    SELECT 1 FROM users
-    WHERE users.id = auth.uid()
-    AND users.role = 'admin'
+    SELECT 1 FROM profiles
+    WHERE profiles.id = auth.uid()
+    AND profiles.is_admin = true
   )
 );
 

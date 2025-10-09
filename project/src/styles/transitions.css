@@ -1,0 +1,196 @@
+/* BTN Clothes - Advanced Transitions
+ * Optimized transitions with 0.2-0.4s timing and cubic-bezier easing
+ */
+
+/* Contextual Slide/Shift - Menu trượt mượt với thời gian 0.3s */
+.slide-transition {
+  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), 
+              opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.slide-right-enter {
+  transform: translateX(-20px);
+  opacity: 0;
+}
+
+.slide-right-enter-active {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.slide-right-exit {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.slide-right-exit-active {
+  transform: translateX(20px);
+  opacity: 0;
+}
+
+.slide-left-enter {
+  transform: translateX(20px);
+  opacity: 0;
+}
+
+.slide-left-enter-active {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.slide-left-exit {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.slide-left-exit-active {
+  transform: translateX(-20px);
+  opacity: 0;
+}
+
+.slide-up-enter {
+  transform: translateY(20px);
+  opacity: 0;
+}
+
+.slide-up-enter-active {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.slide-up-exit {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.slide-up-exit-active {
+  transform: translateY(-20px);
+  opacity: 0;
+}
+
+/* Shared Element Transition - Phóng to ảnh với hiệu ứng scale liền mạch */
+.shared-element-container {
+  overflow: hidden;
+}
+
+.shared-element-transition {
+  transition: transform 0.4s cubic-bezier(0.33, 1, 0.68, 1),
+              opacity 0.4s cubic-bezier(0.33, 1, 0.68, 1),
+              scale 0.4s cubic-bezier(0.33, 1, 0.68, 1);
+  will-change: transform, opacity, scale;
+}
+
+.shared-element-enter {
+  opacity: 0;
+  transform: scale(0.85);
+}
+
+.shared-element-enter-active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.shared-element-exit {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.shared-element-exit-active {
+  opacity: 0;
+  transform: scale(1.1);
+}
+
+.image-zoom-effect {
+  transition: transform 0.4s cubic-bezier(0.33, 1, 0.68, 1);
+  will-change: transform;
+}
+
+.image-zoom-effect:hover {
+  transform: scale(1.1);
+}
+
+/* Subtle Fade-In/Fade-Out - Thông báo và chuyển nội dung với fade tinh tế */
+.fade-transition {
+  transition: opacity 0.3s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.fade-enter {
+  opacity: 0;
+}
+
+.fade-enter-active {
+  opacity: 1;
+}
+
+.fade-exit {
+  opacity: 1;
+}
+
+.fade-exit-active {
+  opacity: 0;
+}
+
+/* Phối hợp hiệu ứng fade với transform */
+.fade-shift-transition {
+  transition: opacity 0.3s cubic-bezier(0.65, 0, 0.35, 1),
+              transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fade-shift-up-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.fade-shift-up-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.fade-shift-up-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.fade-shift-up-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* Hiệu ứng cửa trượt cho menu và side panels */
+.slide-drawer-right {
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.slide-drawer-right.open {
+  transform: translateX(0);
+}
+
+.slide-drawer-left {
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.slide-drawer-left.open {
+  transform: translateX(0);
+}
+
+/* Hiệu ứng mờ dần và thu nhỏ cho wishlist items khi xóa */
+.wishlist-item-remove {
+  transition: opacity 0.3s cubic-bezier(0.65, 0, 0.35, 1),
+              transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              height 0.3s cubic-bezier(0.65, 0, 0.35, 1),
+              margin 0.3s cubic-bezier(0.65, 0, 0.35, 1),
+              padding 0.3s cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: opacity, transform, height, margin, padding;
+}
+
+.wishlist-item-removing {
+  opacity: 0;
+  transform: scale(0.95) translateY(-10px);
+  height: 0;
+  margin: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+}

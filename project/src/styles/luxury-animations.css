@@ -1,0 +1,265 @@
+/* Luxury Animation Effects
+ * A collection of refined, elegant animations for BTN Clothes luxury experience
+ */
+
+/* Gentle hover lift effect for luxury product cards */
+.hover-lift {
+  transition: transform 0.8s cubic-bezier(0.33, 1, 0.68, 1),
+              box-shadow 0.8s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 30px -15px rgba(0, 0, 0, 0.15);
+}
+
+/* Sophisticated underline animation for links */
+.elegant-underline {
+  position: relative;
+}
+
+.elegant-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, 
+              transparent, 
+              rgba(159, 145, 101, 0.3), 
+              rgba(159, 145, 101, 0.7),
+              rgba(159, 145, 101, 0.3),
+              transparent);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.6s cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+.elegant-underline:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* Subtle text reveal animation for luxury headings */
+@keyframes textReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.text-reveal {
+  opacity: 0;
+  animation: textReveal 1.2s cubic-bezier(0.215, 0.61, 0.355, 1) forwards;
+}
+
+.text-reveal-delay-1 {
+  animation-delay: 0.1s;
+}
+
+.text-reveal-delay-2 {
+  animation-delay: 0.2s;
+}
+
+.text-reveal-delay-3 {
+  animation-delay: 0.3s;
+}
+
+/* Glamorous image reveal effect */
+@keyframes imageReveal {
+  0% {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    clip-path: inset(0 0 0% 0);
+    transform: scale(1);
+  }
+}
+
+.image-reveal {
+  opacity: 0;
+  animation: imageReveal 1.4s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+}
+
+.image-reveal-delay-1 {
+  animation-delay: 0.3s;
+}
+
+.image-reveal-delay-2 {
+  animation-delay: 0.5s;
+}
+
+/* Refined fade-in animation for section elements */
+@keyframes refinedFade {
+  0% {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(10px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) scale(1);
+  }
+}
+
+.refined-fade {
+  opacity: 0;
+  animation: refinedFade 1.3s cubic-bezier(0.645, 0.045, 0.355, 1) forwards;
+}
+
+.refined-fade-delay-1 {
+  animation-delay: 0.2s;
+}
+
+.refined-fade-delay-2 {
+  animation-delay: 0.4s;
+}
+
+.refined-fade-delay-3 {
+  animation-delay: 0.6s;
+}
+
+/* Subtle button hover effect */
+.luxury-button {
+  position: relative;
+  transition: color 0.5s cubic-bezier(0.43, 0.13, 0.23, 0.96);
+  z-index: 1;
+  overflow: hidden;
+}
+
+.luxury-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(159, 145, 101, 0.9);
+  z-index: -1;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.7s cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+.luxury-button:hover::before {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* Gold glitter effect for special elements */
+@keyframes goldSparkle {
+  0%, 100% {
+    background-position: 0% 50%;
+    opacity: 0.5;
+  }
+  50% {
+    background-position: 100% 50%;
+    opacity: 0.8;
+  }
+}
+
+.gold-sparkle {
+  background: linear-gradient(90deg, 
+    rgba(159, 145, 101, 0.4), 
+    rgba(215, 196, 155, 0.7),
+    rgba(159, 145, 101, 0.4));
+  background-size: 200% 100%;
+  animation: goldSparkle 4s ease-in-out infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 5px rgba(159, 145, 101, 0.3);
+}
+
+/* Silky scroll animation for smooth page scrolling */
+html.luxury-scroll {
+  scroll-behavior: smooth;
+}
+
+.scroll-section {
+  transition: opacity 1s cubic-bezier(0.33, 1, 0.68, 1),
+              transform 1s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+/* Pulse animation for subtle attention */
+@keyframes luxuryPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+.luxury-pulse {
+  animation: luxuryPulse 3s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+/* Text focus animation for important content */
+@keyframes textFocus {
+  0% {
+    letter-spacing: -0.5em;
+    filter: blur(12px);
+    opacity: 0;
+  }
+  100% {
+    letter-spacing: normal;
+    filter: blur(0px);
+    opacity: 1;
+  }
+}
+
+.text-focus {
+  animation: textFocus 1s cubic-bezier(0.55, 0.085, 0.68, 0.53) both;
+}
+
+/* Subtle rotation animation for decorative elements */
+@keyframes subtleRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.subtle-rotate {
+  animation: subtleRotate 20s linear infinite;
+}
+
+/* Staggered entrance for list items */
+.stagger-item {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s cubic-bezier(0.33, 1, 0.68, 1),
+              transform 0.8s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.stagger-item.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Utility classes for transition easing */
+.ease-luxury {
+  transition-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.ease-luxury-in-out {
+  transition-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+.ease-elegant {
+  transition-timing-function: cubic-bezier(0.43, 0.13, 0.23, 0.96);
+}

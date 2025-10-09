@@ -17,7 +17,7 @@ export default function TransitionLoader() {
     setIsTransitioning(true);
     const timer = setTimeout(() => {
       setIsTransitioning(false);
-    }, 900);
+    }, 1200); // Extended for more luxurious, deliberate transitions
 
     return () => clearTimeout(timer);
   }, [location.pathname, hasLoadedInitially]);
@@ -38,21 +38,21 @@ export default function TransitionLoader() {
               WebkitBackdropFilter: 'blur(20px)',
             }}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-gray-900/30 to-black/40" />
+            <div className="absolute inset-0 bg-gradient-to-br from-deep-navy/80 via-black/50 to-deep-navy/80" />
 
             <motion.div
               className="absolute inset-0"
               animate={{
                 background: [
-                  'radial-gradient(circle at 20% 50%, rgba(45, 212, 191, 0.15) 0%, transparent 50%)',
-                  'radial-gradient(circle at 80% 50%, rgba(14, 165, 233, 0.15) 0%, transparent 50%)',
-                  'radial-gradient(circle at 50% 80%, rgba(45, 212, 191, 0.15) 0%, transparent 50%)',
-                  'radial-gradient(circle at 20% 50%, rgba(45, 212, 191, 0.15) 0%, transparent 50%)',
+                  'radial-gradient(circle at 20% 50%, rgba(159, 145, 101, 0.12) 0%, transparent 50%)', // olive-gold
+                  'radial-gradient(circle at 80% 50%, rgba(125, 137, 122, 0.12) 0%, transparent 50%)', // sage-green
+                  'radial-gradient(circle at 50% 80%, rgba(159, 145, 101, 0.12) 0%, transparent 50%)', // olive-gold
+                  'radial-gradient(circle at 20% 50%, rgba(159, 145, 101, 0.12) 0%, transparent 50%)', // olive-gold
                 ],
               }}
               transition={{
-                duration: 3,
-                ease: 'easeInOut',
+                duration: 5, // Slower, more elegant movement
+                ease: [0.43, 0.13, 0.23, 0.96], // Custom easing for refined movement
                 repeat: Infinity,
               }}
             />
@@ -72,79 +72,83 @@ export default function TransitionLoader() {
           >
             <div className="flex flex-col items-center space-y-8">
               <motion.div className="relative">
-                <motion.div
-                  animate={{
-                    rotate: 360,
-                  }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    ease: 'linear',
-                  }}
-                  className="w-20 h-20 rounded-full border-[3px] border-transparent"
-                  style={{
-                    borderTopColor: 'rgba(45, 212, 191, 0.8)',
-                    borderRightColor: 'rgba(45, 212, 191, 0.4)',
-                  }}
-                />
-                <motion.div
-                  animate={{
-                    rotate: -360,
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: 'linear',
-                  }}
-                  className="absolute inset-2 rounded-full border-[3px] border-transparent"
-                  style={{
-                    borderBottomColor: 'rgba(14, 165, 233, 0.6)',
-                    borderLeftColor: 'rgba(14, 165, 233, 0.3)',
-                  }}
-                />
-                <motion.div
-                  animate={{
-                    scale: [1, 1.2, 1],
-                    opacity: [0.5, 0.8, 0.5],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                  }}
-                  className="absolute inset-0 rounded-full bg-gradient-to-br from-teal-400/20 to-cyan-400/20"
-                />
+                {/* Luxury styled logo spinner */}
+                <motion.div 
+                  className="w-24 h-24 relative flex items-center justify-center"
+                >
+                  {/* Main outer ring */}
+                  <motion.div
+                    animate={{
+                      rotate: 360,
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: [0.76, 0, 0.24, 1],
+                    }}
+                    className="absolute inset-0 rounded-full border-[2px] border-olive-gold/40"
+                    style={{
+                      boxShadow: '0 0 15px rgba(159, 145, 101, 0.2)',
+                    }}
+                  />
+                  
+                  {/* Secondary spinner */}
+                  <motion.div
+                    animate={{
+                      rotate: -180,
+                    }}
+                    transition={{
+                      duration: 5,
+                      repeat: Infinity,
+                      ease: [0.34, 1.56, 0.64, 1],
+                    }}
+                    className="absolute inset-[4px] rounded-full"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(159, 145, 101, 0.1), transparent)',
+                      border: '1px solid rgba(159, 145, 101, 0.3)',
+                    }}
+                  />
+                  
+                  {/* Center emblem */}
+                  <motion.div
+                    animate={{
+                      scale: [1, 1.05, 1],
+                      opacity: [0.7, 1, 0.7],
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                    className="w-12 h-12 rounded-full flex items-center justify-center"
+                    style={{
+                      background: 'radial-gradient(circle, rgba(245, 243, 238, 0.1) 0%, transparent 70%)',
+                      border: '1px solid rgba(159, 145, 101, 0.6)',
+                    }}
+                  >
+                    {/* Brand initial */}
+                    <span className="text-olive-gold text-xl font-cormorant font-light tracking-wider">
+                      BTN
+                    </span>
+                  </motion.div>
+                </motion.div>
               </motion.div>
 
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="flex items-center space-x-2"
+                transition={{ delay: 0.3 }}
+                className="flex flex-col items-center space-y-2 mt-5"
               >
                 <motion.span
-                  animate={{ opacity: [0.4, 1, 0.4] }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                  className="text-white/90 text-sm font-light tracking-[0.3em] uppercase"
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: [0.33, 1, 0.68, 1] }}
+                  className="text-off-white text-xs font-montserrat font-light tracking-[0.4em] uppercase"
                 >
-                  Loading
+                  Curating Elegance
                 </motion.span>
-                <motion.div className="flex space-x-1">
-                  {[0, 1, 2].map((i) => (
-                    <motion.span
-                      key={i}
-                      animate={{ opacity: [0.3, 1, 0.3] }}
-                      transition={{
-                        duration: 1.5,
-                        repeat: Infinity,
-                        delay: i * 0.2,
-                        ease: 'easeInOut',
-                      }}
-                      className="text-white/90 text-sm"
-                    >
-                      .
-                    </motion.span>
-                  ))}
+                <motion.div className="flex justify-center">
+                  <div className="h-[1px] w-12 bg-gradient-to-r from-transparent via-olive-gold/50 to-transparent" />
                 </motion.div>
               </motion.div>
             </div>
@@ -155,10 +159,11 @@ export default function TransitionLoader() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.8 }}
             className="fixed inset-0 z-[99999] pointer-events-none"
           >
-            {[...Array(30)].map((_, i) => (
+            {/* Luxury dust particles */}
+            {[...Array(20)].map((_, i) => (
               <motion.div
                 key={i}
                 initial={{
@@ -166,34 +171,66 @@ export default function TransitionLoader() {
                   y: Math.random() * window.innerHeight,
                   scale: 0,
                   opacity: 0,
+                  rotate: 0,
                 }}
                 animate={{
                   y: [
                     Math.random() * window.innerHeight,
-                    Math.random() * window.innerHeight,
+                    Math.random() * window.innerHeight - 100,
                   ],
                   x: [
                     Math.random() * window.innerWidth,
-                    Math.random() * window.innerWidth,
+                    Math.random() * window.innerWidth - 50,
                   ],
-                  scale: [0, Math.random() * 1.5 + 0.5, 0],
-                  opacity: [0, 0.6, 0],
+                  scale: [0, Math.random() * 0.7 + 0.3, 0],
+                  opacity: [0, 0.4, 0],
+                  rotate: Math.random() * 360,
                 }}
                 transition={{
-                  duration: Math.random() * 3 + 2,
-                  delay: Math.random() * 0.5,
-                  ease: 'easeInOut',
+                  duration: Math.random() * 5 + 3, // Slower, more elegant movement
+                  delay: Math.random() * 0.8,
+                  ease: [0.43, 0.13, 0.23, 0.96], // Luxury easing
                 }}
-                className="absolute rounded-full"
+                className="absolute"
                 style={{
-                  width: Math.random() * 4 + 1,
-                  height: Math.random() * 4 + 1,
-                  background: `radial-gradient(circle, ${
-                    i % 2 === 0
-                      ? 'rgba(45, 212, 191, 0.6)'
-                      : 'rgba(14, 165, 233, 0.6)'
-                  } 0%, transparent 70%)`,
+                  width: Math.random() * 6 + 1,
+                  height: Math.random() * 6 + 1,
+                  background: i % 3 === 0
+                    ? 'rgba(159, 145, 101, 0.4)' // olive-gold
+                    : i % 3 === 1
+                      ? 'rgba(245, 243, 238, 0.4)' // off-white
+                      : 'rgba(125, 137, 122, 0.4)', // sage-green
+                  borderRadius: i % 2 === 0 ? '50%' : '2px', // Mix of circles and squares
                   filter: 'blur(1px)',
+                  boxShadow: '0 0 4px rgba(159, 145, 101, 0.2)',
+                }}
+              />
+            ))}
+            
+            {/* Decorative lines */}
+            {[...Array(6)].map((_, i) => (
+              <motion.div
+                key={`line-${i}`}
+                initial={{
+                  x: Math.random() * window.innerWidth,
+                  y: Math.random() * window.innerHeight,
+                  scaleX: 0,
+                  opacity: 0,
+                }}
+                animate={{
+                  scaleX: [0, 1, 0],
+                  opacity: [0, 0.3, 0],
+                }}
+                transition={{
+                  duration: Math.random() * 4 + 6,
+                  delay: Math.random() * 2,
+                  ease: [0.645, 0.045, 0.355, 1],
+                }}
+                className="absolute h-[1px]"
+                style={{
+                  width: Math.random() * 200 + 50,
+                  background: 'linear-gradient(90deg, transparent, rgba(159, 145, 101, 0.4), transparent)',
+                  transformOrigin: i % 2 === 0 ? 'left' : 'right',
                 }}
               />
             ))}

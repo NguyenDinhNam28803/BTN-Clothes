@@ -1,10 +1,18 @@
-import { useState, useEffect, useRef } from 'react';
-import { CreditCard, MapPin, Truck, CheckCircle, Package, LogIn, ChevronUp, ChevronDown } from 'lucide-react';
-import { useCart } from '../contexts/CartContext';
-import { useAuth } from '../contexts/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
-import { useToast } from '../components/Toast';
-import { supabase } from '../lib/supabase';
+import { useState, useEffect, useRef } from "react";
+import {
+  CreditCard,
+  MapPin,
+  Truck,
+  CheckCircle,
+  ChevronUp,
+  ChevronDown,
+  AlertCircle,
+} from "lucide-react";
+import { useCart } from "../contexts/CartContext";
+import { useAuth } from "../contexts/AuthContext";
+import { useNavigate, Link } from "react-router-dom";
+import { useToast } from "../components/Toast";
+import { supabase } from "../lib/supabase";
 
 // Type definition for Address
 interface Address {
@@ -27,54 +35,69 @@ export default function Checkout() {
   const { showToast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [orderComplete, setOrderComplete] = useState(false);
-  const [orderId, setOrderId] = useState('');
+  const [orderId, setOrderId] = useState("");
   const [shippingInfo, setShippingInfo] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    state: '',
-    postalCode: '',
+    fullName: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    postalCode: "",
   });
-  
+
+  // Add validation state
+  const [errors, setErrors] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    postalCode: "",
+  });
+
   // State cho thông tin đơn hàng
   const [orderSummary, setOrderSummary] = useState({
     subtotal: 0,
     shipping: 0,
     discount: 0,
-    total: 0
+    total: 0,
   });
-  
+
   // State cho danh sách địa chỉ đã lưu
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    null
+  );
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [appliedVoucher, setAppliedVoucher] = useState<string | null>(null);
   const [saveAddressOption, setSaveAddressOption] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('credit_card');
+  const [paymentMethod, setPaymentMethod] = useState("credit_card");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Function to apply selected address to input form
   const applySelectedAddress = (addressId: string) => {
-    const selectedAddress = savedAddresses.find(address => address.id === addressId);
-    
+    const selectedAddress = savedAddresses.find(
+      (address) => address.id === addressId
+    );
+
     if (selectedAddress) {
       setShippingInfo({
         fullName: selectedAddress.full_name,
-        email: user?.email || '',
+        email: user?.email || "",
         phone: selectedAddress.phone,
         address: selectedAddress.address_line1,
         city: selectedAddress.city,
         state: selectedAddress.state,
         postalCode: selectedAddress.postal_code,
       });
-      
+
       setSelectedAddressId(addressId);
-      
+
       // Show notification when address is selected
-      showToast('Shipping address applied', 'success');
+      showToast("Shipping address applied", "success");
     }
   };
 
@@ -84,50 +107,50 @@ export default function Checkout() {
     if (authLoading) {
       return;
     }
-    
+
     // Kiểm tra xem người dùng đã đăng nhập chưa
     if (!user) {
       // Redirect to login page with a return URL
-      navigate('/login?returnUrl=/checkout');
+      navigate("/login?returnUrl=/checkout");
       return;
     }
-    
+
     // Nếu không có cartItems, điều hướng về trang giỏ hàng
     if (cartItems.length === 0) {
-      navigate('/cart');
+      navigate("/cart");
       return;
     }
-    
+
     // Định nghĩa hàm lấy địa chỉ trong useEffect để tránh warning
     const loadSavedAddresses = async () => {
       if (!user) return;
-      
+
       try {
         setLoadingAddresses(true);
-        
+
         const { data, error } = await supabase
-          .from('addresses')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('is_default', { ascending: false });
-        
+          .from("addresses")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("is_default", { ascending: false });
+
         if (error) {
-          console.error('Error fetching saved addresses:', error);
+          console.error("Error fetching saved addresses:", error);
           return;
         }
-        
+
         if (data) {
           setSavedAddresses(data);
-          
+
           // Nếu có địa chỉ mặc định, chọn nó
-          const defaultAddress = data.find(address => address.is_default);
+          const defaultAddress = data.find((address) => address.is_default);
           if (defaultAddress) {
             setSelectedAddressId(defaultAddress.id);
-            
+
             // Cập nhật form với địa chỉ mặc định
             setShippingInfo({
               fullName: defaultAddress.full_name,
-              email: user.email || '',
+              email: user.email || "",
               phone: defaultAddress.phone,
               address: defaultAddress.address_line1,
               city: defaultAddress.city,
@@ -137,137 +160,210 @@ export default function Checkout() {
           }
         }
       } catch (error) {
-        console.error('Error in fetchSavedAddresses:', error);
+        console.error("Error in fetchSavedAddresses:", error);
       } finally {
         setLoadingAddresses(false);
       }
     };
-    
+
     // Lấy địa chỉ đã lưu của người dùng
     loadSavedAddresses();
-    
+
     // Load thông tin giao hàng
-    const savedShippingInfo = localStorage.getItem('shippingInfo');
+    const savedShippingInfo = localStorage.getItem("shippingInfo");
     if (savedShippingInfo) {
       try {
         const parsedInfo = JSON.parse(savedShippingInfo);
         setShippingInfo(parsedInfo);
       } catch (error) {
-        console.error('Failed to parse saved shipping info:', error);
+        console.error("Failed to parse saved shipping info:", error);
       }
     }
-    
+
     // Load thông tin đơn hàng
-    const savedOrderSummary = localStorage.getItem('orderSummary');
+    const savedOrderSummary = localStorage.getItem("orderSummary");
     if (savedOrderSummary) {
       try {
         const parsedSummary = JSON.parse(savedOrderSummary);
         setOrderSummary(parsedSummary);
       } catch (error) {
-        console.error('Failed to parse order summary:', error);
+        console.error("Failed to parse order summary:", error);
       }
     }
-    
-    // Load applied voucher from localStorage
-    const storedVoucher = localStorage.getItem('activeVoucher');
+
+    const storedVoucher = localStorage.getItem("activeVoucher");
     if (storedVoucher) {
       setAppliedVoucher(storedVoucher);
     }
   }, [navigate, cartItems, user, authLoading]);
-  
-  // Xử lý click bên ngoài dropdown
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setDropdownOpen(false);
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
   const steps = [
-    { number: 1, title: 'Shipping', icon: MapPin },
-    { number: 2, title: 'Delivery', icon: Truck },
-    { number: 3, title: 'Payment', icon: CreditCard },
-    { number: 4, title: 'Review', icon: CheckCircle },
+    { number: 1, title: "Shipping", icon: MapPin },
+    { number: 2, title: "Delivery", icon: Truck },
+    { number: 3, title: "Payment", icon: CreditCard },
+    { number: 4, title: "Review", icon: CheckCircle },
   ];
 
-  // Sử dụng orderSummary từ localStorage hoặc tính toán lại nếu cần
   const { subtotal, shipping, discount, total } = orderSummary;
-  
-  // Tính thuế dựa trên subtotal (10%)
+
   const tax = subtotal * 0.1;
-  
-  // Function to handle order placement
+
+  // Validate form fields
+  const validateForm = () => {
+    let isValid = true;
+    let newErrors = {
+      fullName: "",
+      email: "",
+      phone: "",
+      address: "",
+      city: "",
+      state: "",
+      postalCode: "",
+    };
+
+    // Validate full name
+    if (!shippingInfo.fullName.trim()) {
+      newErrors.fullName = "Full name is required";
+      isValid = false;
+    }
+
+    // Validate email
+    if (!shippingInfo.email.trim()) {
+      newErrors.email = "Email is required";
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(shippingInfo.email)) {
+      newErrors.email = "Email is invalid";
+      isValid = false;
+    }
+
+    // Validate phone
+    if (!shippingInfo.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+      isValid = false;
+    } else if (
+      !/^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/im.test(
+        shippingInfo.phone
+      )
+    ) {
+      newErrors.phone = "Phone number is invalid";
+      isValid = false;
+    }
+
+    // Validate address
+    if (!shippingInfo.address.trim()) {
+      newErrors.address = "Address is required";
+      isValid = false;
+    }
+
+    // Validate city
+    if (!shippingInfo.city.trim()) {
+      newErrors.city = "City is required";
+      isValid = false;
+    }
+
+    // Validate state
+    if (!shippingInfo.state.trim()) {
+      newErrors.state = "State is required";
+      isValid = false;
+    }
+
+    // Validate postal code
+    if (!shippingInfo.postalCode.trim()) {
+      newErrors.postalCode = "Postal code is required";
+      isValid = false;
+    } else if (!/^[0-9]{5}(-[0-9]{4})?$/.test(shippingInfo.postalCode)) {
+      newErrors.postalCode = "Postal code is invalid";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const handlePlaceOrder = async () => {
-    // Show processing notification
-    showToast('Đang xử lý đơn hàng...', 'info');
-    
-    // Generate a random order ID
+    showToast("Đang xử lý đơn hàng...", "info");
+
     const newOrderId = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
-    
-    // Create order object
+
     const order = {
       id: newOrderId,
       date: new Date().toISOString(),
-      status: 'processing',
+      status: "processing",
       total: total,
-      items: cartItems.map(item => ({
+      items: cartItems.map((item) => ({
         id: item.id,
-        product_name: item.product?.name || 'Product',
+        product_name: item.product?.name || "Product",
         quantity: item.quantity,
-        price: (item.product?.sale_price || item.product?.base_price || 0) + (item.variant?.price_adjustment || 0),
-        image_url: item.product?.images?.[0] || 'https://via.placeholder.com/100',
-        variant: item.variant
+        price:
+          (item.product?.sale_price || item.product?.base_price || 0) +
+          (item.variant?.price_adjustment || 0),
+        image_url:
+          item.product?.images?.[0] || "https://via.placeholder.com/100",
+        variant: item.variant,
       })),
       shipping_address: {
         fullName: shippingInfo.fullName,
         address: shippingInfo.address,
         city: shippingInfo.city,
         postalCode: shippingInfo.postalCode,
-        phone: shippingInfo.phone
-      }
+        phone: shippingInfo.phone,
+      },
     };
-    
-    // Save order to localStorage with a slight delay to simulate processing
+
     setTimeout(() => {
       try {
-        // Get existing orders or initialize empty array
-        const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+        const existingOrders = JSON.parse(
+          localStorage.getItem("orders") || "[]"
+        );
         existingOrders.push(order);
-        localStorage.setItem('orders', JSON.stringify(existingOrders));
-        
-        // Update orders list
-        const ordersList = JSON.parse(localStorage.getItem('ordersList') || '[]');
+        localStorage.setItem("orders", JSON.stringify(existingOrders));
+
+        const ordersList = JSON.parse(
+          localStorage.getItem("ordersList") || "[]"
+        );
         ordersList.push({
           id: newOrderId,
           date: new Date().toISOString(),
-          status: 'processing',
+          status: "processing",
           total: total,
-          items_count: cartItems.length
+          items_count: cartItems.length,
         });
-        localStorage.setItem('ordersList', JSON.stringify(ordersList));
-        
-        // Set order as complete and store the ID
+        localStorage.setItem("ordersList", JSON.stringify(ordersList));
+
         setOrderId(newOrderId);
         setOrderComplete(true);
-        
-        // Clear the cart
+
         clearCart();
-        
-        // Remove checkout data from localStorage
-        localStorage.removeItem('shippingInfo');
-        localStorage.removeItem('orderSummary');
-        
-        // Show success notification
-        showToast('Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại BTN Clothes.', 'success');
+
+        localStorage.removeItem("shippingInfo");
+        localStorage.removeItem("orderSummary");
+
+        showToast(
+          "Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại BTN Clothes.",
+          "success"
+        );
       } catch (error) {
-        console.error('Failed to save order:', error);
-        showToast('Đã xảy ra lỗi khi xử lý đơn hàng. Vui lòng thử lại.', 'error');
+        console.error("Failed to save order:", error);
+        showToast(
+          "Đã xảy ra lỗi khi xử lý đơn hàng. Vui lòng thử lại.",
+          "error"
+        );
       }
     }, 1000);
   };
@@ -280,27 +376,28 @@ export default function Checkout() {
             <div className="w-20 h-20 bg-green-100 rounded-full mx-auto mb-6 flex items-center justify-center">
               <CheckCircle className="text-green-500" size={40} />
             </div>
-            
+
             <h1 className="text-3xl font-serif mb-4">Order Successful!</h1>
             <p className="text-gray-600 mb-8">
-              Thank you for shopping with BTN Clothes. Your order has been received and is now being processed.
+              Thank you for shopping with BTN Clothes. Your order has been
+              received and is now being processed.
             </p>
-            
+
             <div className="mb-8">
               <div className="flex items-center justify-center gap-2 text-lg font-medium">
                 <span className="text-gray-600">Order Number:</span>
                 <span className="text-teal-600">{orderId}</span>
               </div>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link 
+              <Link
                 to={`/order/${orderId}`}
                 className="px-6 py-3 bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition-colors"
               >
                 View Order Details
               </Link>
-              <Link 
+              <Link
                 to="/shop"
                 className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
@@ -331,17 +428,23 @@ export default function Checkout() {
                     <div
                       className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-all ${
                         isActive
-                          ? 'bg-teal-500 text-white scale-110'
+                          ? "bg-teal-500 text-white scale-110"
                           : isCompleted
-                          ? 'bg-green-500 text-white'
-                          : 'bg-gray-200 text-gray-500'
+                          ? "bg-green-500 text-white"
+                          : "bg-gray-200 text-gray-500"
                       }`}
                     >
-                      {isCompleted ? <CheckCircle size={24} /> : <Icon size={24} />}
+                      {isCompleted ? (
+                        <CheckCircle size={24} />
+                      ) : (
+                        <Icon size={24} />
+                      )}
                     </div>
                     <span
                       className={`text-sm font-medium ${
-                        isActive || isCompleted ? 'text-gray-900' : 'text-gray-500'
+                        isActive || isCompleted
+                          ? "text-gray-900"
+                          : "text-gray-500"
                       }`}
                     >
                       {step.title}
@@ -350,7 +453,7 @@ export default function Checkout() {
                   {index < steps.length - 1 && (
                     <div
                       className={`h-0.5 flex-1 mx-2 transition-all ${
-                        isCompleted ? 'bg-green-500' : 'bg-gray-200'
+                        isCompleted ? "bg-green-500" : "bg-gray-200"
                       }`}
                     />
                   )}
@@ -365,25 +468,33 @@ export default function Checkout() {
             <div className="bg-white rounded-2xl shadow-lg p-8">
               {currentStep === 1 && (
                 <div>
-                  <h2 className="text-2xl font-serif mb-6">Shipping Information</h2>
-                  
+                  <h2 className="text-2xl font-serif mb-6">
+                    Shipping Information
+                  </h2>
+
                   {/* Saved addresses as combobox */}
                   {savedAddresses.length > 0 && (
                     <div className="mb-8">
-                      <h3 className="text-lg font-medium mb-4">Select delivery address</h3>
-                      
+                      <h3 className="text-lg font-medium mb-4">
+                        Select delivery address
+                      </h3>
+
                       <div className="relative mb-6" ref={dropdownRef}>
-                        <div 
+                        <div
                           className="w-full flex justify-between items-center px-4 py-3 border border-gray-300 rounded-lg cursor-pointer"
-                          onClick={() => setDropdownOpen(prev => !prev)}
+                          onClick={() => setDropdownOpen((prev) => !prev)}
                         >
                           {selectedAddressId ? (
                             <div>
                               {(() => {
-                                const selected = savedAddresses.find(a => a.id === selectedAddressId);
+                                const selected = savedAddresses.find(
+                                  (a) => a.id === selectedAddressId
+                                );
                                 return selected ? (
                                   <div>
-                                    <p className="font-medium">{selected.full_name}</p>
+                                    <p className="font-medium">
+                                      {selected.full_name}
+                                    </p>
                                     <p className="text-sm text-gray-600">
                                       {selected.address_line1}, {selected.city}
                                     </p>
@@ -391,24 +502,36 @@ export default function Checkout() {
                                       Phone: {selected.phone}
                                     </p>
                                   </div>
-                                ) : "Select address";
+                                ) : (
+                                  "Select address"
+                                );
                               })()}
                             </div>
                           ) : (
-                            <span className="text-gray-500">Select address</span>
+                            <span className="text-gray-500">
+                              Select address
+                            </span>
                           )}
-                          
-                          {dropdownOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+
+                          {dropdownOpen ? (
+                            <ChevronUp size={20} />
+                          ) : (
+                            <ChevronDown size={20} />
+                          )}
                         </div>
-                        
+
                         {/* Dropdown menu */}
                         {dropdownOpen && (
                           <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg">
-                            {savedAddresses.map(address => (
-                              <div 
-                                key={address.id} 
+                            {savedAddresses.map((address) => (
+                              <div
+                                key={address.id}
                                 className={`p-3 border-b last:border-b-0 hover:bg-gray-50 cursor-pointer
-                                  ${selectedAddressId === address.id ? 'bg-teal-50' : ''}`}
+                                  ${
+                                    selectedAddressId === address.id
+                                      ? "bg-teal-50"
+                                      : ""
+                                  }`}
                                 onClick={() => {
                                   applySelectedAddress(address.id);
                                   setDropdownOpen(false);
@@ -424,9 +547,12 @@ export default function Checkout() {
                                         </span>
                                       )}
                                     </p>
-                                    <p className="text-sm text-gray-600">{address.phone}</p>
                                     <p className="text-sm text-gray-600">
-                                      {address.address_line1}, {address.city}, {address.state} {address.postal_code}
+                                      {address.phone}
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                      {address.address_line1}, {address.city},{" "}
+                                      {address.state} {address.postal_code}
                                     </p>
                                   </div>
                                   {selectedAddressId === address.id && (
@@ -437,22 +563,22 @@ export default function Checkout() {
                                 </div>
                               </div>
                             ))}
-                            
+
                             {/* Add new address option */}
                             <div className="p-3 text-center border-t">
-                              <button 
+                              <button
                                 type="button"
                                 className="text-teal-600 hover:underline text-sm font-medium"
                                 onClick={() => {
                                   setSelectedAddressId(null);
                                   setShippingInfo({
-                                    fullName: '',
-                                    email: user?.email || '',
-                                    phone: '',
-                                    address: '',
-                                    city: '',
-                                    state: '',
-                                    postalCode: '',
+                                    fullName: "",
+                                    email: user?.email || "",
+                                    phone: "",
+                                    address: "",
+                                    city: "",
+                                    state: "",
+                                    postalCode: "",
                                   });
                                   setDropdownOpen(false);
                                 }}
@@ -463,86 +589,195 @@ export default function Checkout() {
                           </div>
                         )}
                       </div>
-                      
+
                       {!selectedAddressId && (
-                        <h3 className="text-lg font-medium mb-4">Enter new address</h3>
+                        <h3 className="text-lg font-medium mb-4">
+                          Enter new address
+                        </h3>
                       )}
                     </div>
                   )}
-                  
+
                   {/* Shipping information form */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium mb-2">Full Name</label>
+                      <label className="block text-sm font-medium mb-2">
+                        Full Name *
+                      </label>
                       <input
                         type="text"
                         value={shippingInfo.fullName}
-                        onChange={(e) => setShippingInfo({ ...shippingInfo, fullName: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        onChange={(e) =>
+                          setShippingInfo({
+                            ...shippingInfo,
+                            fullName: e.target.value,
+                          })
+                        }
+                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 ${
+                          errors.fullName ? "border-red-500" : "border-gray-300"
+                        }`}
                         placeholder="John Doe"
                       />
+                      {errors.fullName && (
+                        <p className="mt-1 text-red-500 text-sm flex items-center">
+                          <AlertCircle size={16} className="mr-1" />{" "}
+                          {errors.fullName}
+                        </p>
+                      )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2">Email</label>
+                      <label className="block text-sm font-medium mb-2">
+                        Email *
+                      </label>
                       <input
                         type="email"
                         value={shippingInfo.email}
-                        onChange={(e) => setShippingInfo({ ...shippingInfo, email: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        onChange={(e) =>
+                          setShippingInfo({
+                            ...shippingInfo,
+                            email: e.target.value,
+                          })
+                        }
+                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 ${
+                          errors.email ? "border-red-500" : "border-gray-300"
+                        }`}
                         placeholder="example@gmail.com"
                       />
+                      {errors.email && (
+                        <p className="mt-1 text-red-500 text-sm flex items-center">
+                          <AlertCircle size={16} className="mr-1" />{" "}
+                          {errors.email}
+                        </p>
+                      )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2">Phone Number</label>
+                      <label className="block text-sm font-medium mb-2">
+                        Phone Number *
+                      </label>
                       <input
                         type="tel"
                         value={shippingInfo.phone}
-                        onChange={(e) => setShippingInfo({ ...shippingInfo, phone: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        onChange={(e) =>
+                          setShippingInfo({
+                            ...shippingInfo,
+                            phone: e.target.value,
+                          })
+                        }
+                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 ${
+                          errors.phone ? "border-red-500" : "border-gray-300"
+                        }`}
                         placeholder="+1 234 567 890"
                       />
+                      {errors.phone && (
+                        <p className="mt-1 text-red-500 text-sm flex items-center">
+                          <AlertCircle size={16} className="mr-1" />{" "}
+                          {errors.phone}
+                        </p>
+                      )}
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium mb-2">Address</label>
+                      <label className="block text-sm font-medium mb-2">
+                        Address *
+                      </label>
                       <input
                         type="text"
                         value={shippingInfo.address}
-                        onChange={(e) => setShippingInfo({ ...shippingInfo, address: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        onChange={(e) =>
+                          setShippingInfo({
+                            ...shippingInfo,
+                            address: e.target.value,
+                          })
+                        }
+                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 ${
+                          errors.address ? "border-red-500" : "border-gray-300"
+                        }`}
                         placeholder="123 Main St"
                       />
+                      {errors.address && (
+                        <p className="mt-1 text-red-500 text-sm flex items-center">
+                          <AlertCircle size={16} className="mr-1" />{" "}
+                          {errors.address}
+                        </p>
+                      )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2">City</label>
+                      <label className="block text-sm font-medium mb-2">
+                        City *
+                      </label>
                       <input
                         type="text"
                         value={shippingInfo.city}
-                        onChange={(e) => setShippingInfo({ ...shippingInfo, city: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        onChange={(e) =>
+                          setShippingInfo({
+                            ...shippingInfo,
+                            city: e.target.value,
+                          })
+                        }
+                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 ${
+                          errors.city ? "border-red-500" : "border-gray-300"
+                        }`}
                         placeholder="New York"
                       />
+                      {errors.city && (
+                        <p className="mt-1 text-red-500 text-sm flex items-center">
+                          <AlertCircle size={16} className="mr-1" />{" "}
+                          {errors.city}
+                        </p>
+                      )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2">State/Province</label>
+                      <label className="block text-sm font-medium mb-2">
+                        State/Province *
+                      </label>
                       <input
                         type="text"
                         value={shippingInfo.state}
-                        onChange={(e) => setShippingInfo({ ...shippingInfo, state: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        onChange={(e) =>
+                          setShippingInfo({
+                            ...shippingInfo,
+                            state: e.target.value,
+                          })
+                        }
+                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 ${
+                          errors.state ? "border-red-500" : "border-gray-300"
+                        }`}
                         placeholder="NY"
                       />
+                      {errors.state && (
+                        <p className="mt-1 text-red-500 text-sm flex items-center">
+                          <AlertCircle size={16} className="mr-1" />{" "}
+                          {errors.state}
+                        </p>
+                      )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2">Postal Code</label>
+                      <label className="block text-sm font-medium mb-2">
+                        Postal Code *
+                      </label>
                       <input
                         type="text"
                         value={shippingInfo.postalCode}
-                        onChange={(e) => setShippingInfo({ ...shippingInfo, postalCode: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        onChange={(e) =>
+                          setShippingInfo({
+                            ...shippingInfo,
+                            postalCode: e.target.value,
+                          })
+                        }
+                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 ${
+                          errors.postalCode
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        }`}
                         placeholder="10001"
                       />
+                      {errors.postalCode && (
+                        <p className="mt-1 text-red-500 text-sm flex items-center">
+                          <AlertCircle size={16} className="mr-1" />{" "}
+                          {errors.postalCode}
+                        </p>
+                      )}
                     </div>
-                    
+
                     {/* Option to save this address */}
                     {user && selectedAddressId === null && (
                       <div className="md:col-span-2 flex items-center mt-4">
@@ -550,10 +785,15 @@ export default function Checkout() {
                           type="checkbox"
                           id="save_address"
                           checked={saveAddressOption}
-                          onChange={(e) => setSaveAddressOption(e.target.checked)}
+                          onChange={(e) =>
+                            setSaveAddressOption(e.target.checked)
+                          }
                           className="mr-2 h-4 w-4 text-teal-500 focus:ring-teal-500"
                         />
-                        <label htmlFor="save_address" className="text-sm text-gray-600">
+                        <label
+                          htmlFor="save_address"
+                          className="text-sm text-gray-600"
+                        >
                           Save this address for future orders
                         </label>
                       </div>
@@ -567,19 +807,37 @@ export default function Checkout() {
                   <h2 className="text-2xl font-serif mb-6">Delivery Method</h2>
                   <div className="space-y-4">
                     {[
-                      { name: 'Standard Delivery', time: '5-7 business days', price: 10 },
-                      { name: 'Express Delivery', time: '2-3 business days', price: 20 },
-                      { name: 'Next Day Delivery', time: '1 business day', price: 35 },
+                      {
+                        name: "Standard Delivery",
+                        time: "5-7 business days",
+                        price: 10,
+                      },
+                      {
+                        name: "Express Delivery",
+                        time: "2-3 business days",
+                        price: 20,
+                      },
+                      {
+                        name: "Next Day Delivery",
+                        time: "1 business day",
+                        price: 35,
+                      },
                     ].map((method, index) => (
                       <label
                         key={index}
                         className="flex items-center justify-between p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-teal-500 transition-colors"
                       >
                         <div className="flex items-center gap-4">
-                          <input type="radio" name="delivery" defaultChecked={index === 0} />
+                          <input
+                            type="radio"
+                            name="delivery"
+                            defaultChecked={index === 0}
+                          />
                           <div>
                             <p className="font-semibold">{method.name}</p>
-                            <p className="text-sm text-gray-600">{method.time}</p>
+                            <p className="text-sm text-gray-600">
+                              {method.time}
+                            </p>
                           </div>
                         </div>
                         <span className="font-bold">${method.price}</span>
@@ -594,13 +852,24 @@ export default function Checkout() {
                   <h2 className="text-2xl font-serif mb-6">Payment Method</h2>
                   <div className="space-y-4">
                     <label className="flex items-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-teal-500 transition-colors">
-                      <input 
-                        type="radio" 
-                        name="payment" 
-                        value="credit_card"
-                        checked={paymentMethod === 'credit_card'}
+                      <input
+                        type="radio"
+                        name="payment"
+                        value="cash_on_delivery"
+                        checked={paymentMethod === "cash_on_delivery"}
                         onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="mr-4" 
+                        className="mr-4"
+                      />
+                      <span className="font-semibold">Cash on Delivery</span>
+                    </label>
+                    <label className="flex items-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-teal-500 transition-colors">
+                      <input
+                        type="radio"
+                        name="payment"
+                        value="credit_card"
+                        checked={paymentMethod === "credit_card"}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="mr-4"
                       />
                       <div className="flex items-center gap-3">
                         <CreditCard size={24} />
@@ -610,7 +879,9 @@ export default function Checkout() {
 
                     <div className="pl-12 space-y-4">
                       <div>
-                        <label className="block text-sm font-medium mb-2">Card Number</label>
+                        <label className="block text-sm font-medium mb-2">
+                          Card Number
+                        </label>
                         <input
                           type="text"
                           placeholder="1234 5678 9012 3456"
@@ -619,7 +890,9 @@ export default function Checkout() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium mb-2">Expiry Date</label>
+                          <label className="block text-sm font-medium mb-2">
+                            Expiry Date
+                          </label>
                           <input
                             type="text"
                             placeholder="MM/YY"
@@ -627,7 +900,9 @@ export default function Checkout() {
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium mb-2">CVV</label>
+                          <label className="block text-sm font-medium mb-2">
+                            CVV
+                          </label>
                           <input
                             type="text"
                             placeholder="123"
@@ -638,27 +913,15 @@ export default function Checkout() {
                     </div>
 
                     <label className="flex items-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-teal-500 transition-colors">
-                      <input 
-                        type="radio" 
-                        name="payment" 
+                      <input
+                        type="radio"
+                        name="payment"
                         value="paypal"
-                        checked={paymentMethod === 'paypal'}
+                        checked={paymentMethod === "paypal"}
                         onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="mr-4" 
+                        className="mr-4"
                       />
                       <span className="font-semibold">PayPal</span>
-                    </label>
-
-                    <label className="flex items-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-teal-500 transition-colors">
-                      <input 
-                        type="radio" 
-                        name="payment" 
-                        value="cash_on_delivery"
-                        checked={paymentMethod === 'cash_on_delivery'}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="mr-4" 
-                      />
-                      <span className="font-semibold">Cash on Delivery</span>
                     </label>
                   </div>
                 </div>
@@ -666,33 +929,55 @@ export default function Checkout() {
 
               {currentStep === 4 && (
                 <div>
-                  <h2 className="text-2xl font-serif mb-6">Review Your Order</h2>
+                  <h2 className="text-2xl font-serif mb-6">
+                    Review Your Order
+                  </h2>
                   <div className="space-y-6">
                     <div>
                       <h3 className="font-semibold mb-3">Shipping Address</h3>
                       <div className="p-4 bg-gray-50 rounded-lg">
-                        <p className="font-medium">{shippingInfo.fullName || 'John Doe'}</p>
-                        <p className="text-gray-600">{shippingInfo.address || '123 Main St'}</p>
-                        <p className="text-gray-600">
-                          {shippingInfo.city || 'New York'}, {shippingInfo.state || 'NY'}{' '}
-                          {shippingInfo.postalCode || '10001'}
+                        <p className="font-medium">
+                          {shippingInfo.fullName || "John Doe"}
                         </p>
-                        <p className="text-gray-600">{shippingInfo.phone || '+1 234 567 890'}</p>
+                        <p className="text-gray-600">
+                          {shippingInfo.address || "123 Main St"}
+                        </p>
+                        <p className="text-gray-600">
+                          {shippingInfo.city || "New York"},{" "}
+                          {shippingInfo.state || "NY"}{" "}
+                          {shippingInfo.postalCode || "10001"}
+                        </p>
+                        <p className="text-gray-600">
+                          {shippingInfo.phone || "+1 234 567 890"}
+                        </p>
                       </div>
                     </div>
                     <div>
                       <h3 className="font-semibold mb-3">Order Items</h3>
                       {cartItems.map((item) => (
-                        <div key={item.id} className="flex justify-between py-3 border-b">
+                        <div
+                          key={item.id}
+                          className="flex justify-between py-3 border-b"
+                        >
                           <div>
-                            <p className="font-medium">{item.product?.name || 'Product'}</p>
+                            <p className="font-medium">
+                              {item.product?.name || "Product"}
+                            </p>
                             <p className="text-sm text-gray-600">
-                              {item.variant?.size || 'One Size'} / {item.variant?.color || 'Default'} × {item.quantity}
+                              {item.variant?.size || "One Size"} /{" "}
+                              {item.variant?.color || "Default"} ×{" "}
+                              {item.quantity}
                             </p>
                           </div>
                           <p className="font-semibold">
-                            ${(((item.product?.sale_price || item.product?.base_price || 0) + 
-                              (item.variant?.price_adjustment || 0)) * item.quantity).toFixed(2)}
+                            $
+                            {(
+                              ((item.product?.sale_price ||
+                                item.product?.base_price ||
+                                0) +
+                                (item.variant?.price_adjustment || 0)) *
+                              item.quantity
+                            ).toFixed(2)}
                           </p>
                         </div>
                       ))}
@@ -712,7 +997,17 @@ export default function Checkout() {
                 )}
                 <button
                   onClick={() => {
-                    if (currentStep < 4) {
+                    if (currentStep === 1) {
+                      // Validate form before proceeding
+                      if (validateForm()) {
+                        setCurrentStep(currentStep + 1);
+                      } else {
+                        showToast(
+                          "Please fill in all required fields correctly",
+                          "error"
+                        );
+                      }
+                    } else if (currentStep < 4) {
                       setCurrentStep(currentStep + 1);
                     } else if (currentStep === 4) {
                       handlePlaceOrder();
@@ -720,7 +1015,7 @@ export default function Checkout() {
                   }}
                   className="ml-auto px-8 py-3 bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition-colors"
                 >
-                  {currentStep === 4 ? 'Place Order' : 'Continue'}
+                  {currentStep === 4 ? "Place Order" : "Continue"}
                 </button>
               </div>
             </div>
@@ -734,11 +1029,17 @@ export default function Checkout() {
                 {cartItems.map((item) => (
                   <div key={item.id} className="flex justify-between text-sm">
                     <span className="text-gray-600">
-                      {item.product?.name || 'Product'} × {item.quantity}
+                      {item.product?.name || "Product"} × {item.quantity}
                     </span>
                     <span className="font-medium">
-                      ${(((item.product?.sale_price || item.product?.base_price || 0) + 
-                        (item.variant?.price_adjustment || 0)) * item.quantity).toFixed(2)}
+                      $
+                      {(
+                        ((item.product?.sale_price ||
+                          item.product?.base_price ||
+                          0) +
+                          (item.variant?.price_adjustment || 0)) *
+                        item.quantity
+                      ).toFixed(2)}
                     </span>
                   </div>
                 ))}
@@ -760,7 +1061,9 @@ export default function Checkout() {
                 {discount > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Discount</span>
-                    <span className="font-semibold">-${discount.toFixed(2)}</span>
+                    <span className="font-semibold">
+                      -${discount.toFixed(2)}
+                    </span>
                   </div>
                 )}
                 <div className="flex justify-between text-xl font-bold pt-3 border-t">

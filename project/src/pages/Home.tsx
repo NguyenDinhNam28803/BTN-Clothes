@@ -6,6 +6,7 @@ import { Product } from '../types';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useToast } from '../components/Toast';
+import ProductCard from '../components/ProductCard';
 
 export default function Home() {
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
@@ -157,66 +158,57 @@ export default function Home() {
     <div className="min-h-screen w-screen max-w-[100vw] overflow-x-hidden">
       <section className="relative min-h-screen w-full flex items-center justify-center overflow-hidden">
         <video
-          className="absolute inset-0 z-0 w-full h-full object-cover"
-          style={{ objectFit: 'cover' }}
+          className="absolute inset-0 z-0 w-full h-full object-cover shared-element-transition"
+          style={{ objectFit: 'cover', transform: 'scale(1.05)' }}
           src="/src/Assets/IMG/BTN.mp4"
           autoPlay
           loop
           muted
           playsInline
         />
-        <div className="absolute inset-0 bg-black/40 z-10" />
+        <div className="absolute inset-0 bg-gradient-to-b from-deep-navy/60 to-black/40 z-10" />
 
-        <div className="relative z-20 text-center text-white px-4">
+        <div className="relative z-20 text-center text-white px-4 max-w-4xl">
           <h1
-            className="text-5xl md:text-7xl lg:text-8xl font-serif mb-6 tracking-wider"
-            style={{ fontFamily: "'Playfair Display', serif" }}
+            className="text-5xl md:text-7xl lg:text-8xl font-display mb-8 tracking-wider leading-tight fade-shift-transition slide-up-enter slide-up-enter-active"
             data-aos="fade-up"
           >
             Elevate Your Style
           </h1>
-          <p className="text-xl md:text-2xl mb-8" data-aos="fade-up" data-aos-delay="200">
-            Discover the latest trends in fashion
+          <p className="text-xl md:text-2xl mb-12 font-light fade-shift-transition slide-up-enter slide-up-enter-active" data-aos="fade-up" data-aos-delay="200">
+            Discover timeless elegance in our curated collection
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center" data-aos="fade-up" data-aos-delay="400">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center fade-shift-transition" data-aos="fade-up" data-aos-delay="400">
             <Link
               to="/shop"
-              className="px-8 py-4 bg-white text-black font-semibold rounded-full hover:bg-teal-500 hover:text-white transition-all transform hover:scale-105"
+              className="px-10 py-4 bg-olive-gold text-white font-medium text-sm uppercase tracking-wider rounded-none hover:bg-white hover:text-deep-navy transition-all duration-300 transform hover:scale-102 shadow-lg slide-transition slide-left-enter slide-left-enter-active"
             >
               Shop Now
             </Link>
             <Link
               to="/new-arrivals"
-              className="px-8 py-4 border-2 border-white text-white font-semibold rounded-full hover:bg-white hover:text-black transition-all transform hover:scale-105"
+              className="px-10 py-4 border border-white text-white font-medium text-sm uppercase tracking-wider rounded-none hover:border-olive-gold hover:bg-transparent hover:text-olive-gold transition-all duration-300 transform hover:scale-102 slide-transition slide-right-enter slide-right-enter-active"
             >
               New Collection
             </Link>
           </div>
         </div>
 
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 animate-bounce">
-          <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
-            <div className="w-1 h-3 bg-white rounded-full mt-2 animate-scroll-down" />
+        <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 z-20">
+          <div className="w-7 h-12 border border-white/70 rounded-full flex justify-center">
+            <div className="w-1 h-3 bg-white/70 rounded-full mt-2 animate-scroll-down" />
           </div>
         </div>
       </section>
 
       <section
-        className="py-20 relative w-full"
+        className="py-24 relative w-full bg-luxury-section"
         data-scroll
       >
-        <div
-          className="absolute inset-0 z-0"
-          style={{
-            backgroundImage: 'radial-gradient(125% 125% at 50% 90%, #ffffff 40%, #14b8a6 100%)',
-            backgroundSize: '100% 100%',
-          }}
-        />
-
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-16" data-aos="fade-up">
-            <h2 className="text-4xl md:text-5xl font-serif mb-4">Featured Categories</h2>
-            <p className="text-gray-600 text-lg">Explore our curated collections</p>
+        <div className="w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 relative z-10">
+          <div className="text-center mb-20" data-aos="fade-up">
+            <h2 className="text-4xl md:text-5xl font-display mb-6 tracking-wide text-deep-navy">Featured Collections</h2>
+            <p className="text-gray-600 text-lg font-light max-w-2xl mx-auto">Discover our curated selection of timeless elegance</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -248,15 +240,15 @@ export default function Home() {
                 data-cursor="pointer"
                 data-aos="zoom-in"
                 data-aos-delay={index * 100}
-                className="group relative h-96 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all transform hover:scale-105"
+                className="group relative h-96 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all transform hover:scale-105 shared-element-container"
               >
                 <img
                   src={category.image}
                   alt={category.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 shared-element-transition"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                <div className="absolute bottom-6 left-6 text-white">
+                <div className="absolute bottom-6 left-6 text-white fade-transition">
                   <h3 className="text-3xl font-serif mb-2">{category.title}</h3>
                   <div className="flex items-center gap-2 text-sm">
                     <span>Explore</span>
@@ -269,20 +261,20 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-20 bg-white w-full">
+      <section className="py-24 bg-luxury-lines w-full">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16" data-aos="fade-up">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Sparkles className="text-teal-500" />
-              <h2 className="text-4xl md:text-5xl font-serif">New Arrivals</h2>
-              <Sparkles className="text-teal-500" />
+          <div className="text-center mb-20" data-aos="fade-up">
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <Sparkles className="text-sage-green" size={24} strokeWidth={1.5} />
+              <h2 className="text-4xl md:text-5xl font-display tracking-wide text-deep-navy">New Arrivals</h2>
+              <Sparkles className="text-sage-green" size={24} strokeWidth={1.5} />
             </div>
-            <p className="text-gray-600 text-lg">Fresh styles just in</p>
+            <p className="text-gray-600 text-lg font-light max-w-2xl mx-auto">Discover our latest curated collection</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {loading ? (
-              [1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              [1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="animate-pulse">
                   <div className="aspect-[3/4] bg-gray-200 rounded-2xl mb-4" />
                   <div className="h-4 bg-gray-200 rounded mb-2" />
@@ -290,69 +282,15 @@ export default function Home() {
                 </div>
               ))
             ) : newArrivals.length > 0 ? (
-              newArrivals.map((product, index) => {
-                const price = product.sale_price || product.base_price;
-                const hasDiscount = product.sale_price && product.sale_price < product.base_price;
-                const mainImage = Array.isArray(product.images) && product.images.length > 0
-                  ? product.images[0]
-                  : 'https://images.pexels.com/photos/1926769/pexels-photo-1926769.jpeg?auto=compress&cs=tinysrgb&w=400';
-
-                return (
-                  <div
-                    key={product.id}
-                    data-cursor="shirt"
-                    data-aos="fade-up"
-                    data-aos-delay={index * 50}
-                    className="group cursor-pointer"
-                  >
-                    <Link to={`/product/${product.id}`} className="relative overflow-hidden rounded-2xl mb-4 bg-gray-100 aspect-[3/4] block">
-                      <img
-                        src={mainImage}
-                        alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                      <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleAddToCart(product.id);
-                          }}
-                          className="p-2 bg-white rounded-full shadow-lg hover:bg-teal-500 hover:text-white transition-colors"
-                        >
-                          <ShoppingBag size={20} />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            toggleWishlist(product.id);
-                          }}
-                          className="p-2 bg-white rounded-full shadow-lg hover:bg-red-500 hover:text-white transition-colors"
-                        >
-                          <span className={isInWishlist(product.id) ? 'text-red-500' : ''}>
-                            ❤
-                          </span>
-                        </button>
-                      </div>
-                      <div className="absolute top-4 left-4">
-                        <span className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
-                          NEW
-                        </span>
-                      </div>
-                    </Link>
-                    <Link to={`/product/${product.id}`}>
-                      <h3 className="font-semibold text-lg mb-2 group-hover:text-teal-500 transition-colors">
-                        {product.name}
-                      </h3>
-                    </Link>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl font-bold">${price.toFixed(2)}</span>
-                      {hasDiscount && (
-                        <span className="text-gray-400 line-through">${product.base_price.toFixed(2)}</span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
+              newArrivals.map((product, index) => (
+                <div 
+                  key={product.id}
+                  data-aos="fade-up"
+                  data-aos-delay={index * 50}
+                >
+                  <ProductCard product={product} />
+                </div>
+              ))
             ) : (
               <div className="col-span-full text-center py-12">
                 <p className="text-gray-600">No new arrivals available</p>
@@ -363,37 +301,29 @@ export default function Home() {
           <div className="text-center mt-12">
             <Link
               to="/shop"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-teal-500 text-white font-semibold rounded-full hover:bg-teal-600 transition-colors"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-olive-gold text-white font-semibold rounded-full hover:bg-deep-navy transition-colors slide-transition"
             >
               View All Products
-              <ArrowRight size={20} />
+              <ArrowRight size={20} className="slide-transition" />
             </Link>
           </div>
         </div>
       </section>
 
       <section
-        className="py-20 relative w-full"
+        className="py-24 relative w-full bg-luxury-dots"
         data-scroll
       >
-        <div
-          className="absolute inset-0 z-0"
-          style={{
-            backgroundImage: 'radial-gradient(125% 125% at 50% 90%, #ffffff 40%, #f59e0b 100%)',
-            backgroundSize: '100% 100%',
-          }}
-        />
-
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-16">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <TrendingUp className="text-red-500" size={32} />
-              <h2 className="text-4xl md:text-5xl font-serif">Flash Sale</h2>
-              <div className="text-3xl">🔥</div>
+          <div className="text-center mb-20">
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <Sparkles className="text-muted-rust" size={28} strokeWidth={1.5} />
+              <h2 className="text-4xl md:text-5xl font-display tracking-wide text-deep-navy">Limited Offers</h2>
+              <Sparkles className="text-muted-rust" size={28} strokeWidth={1.5} />
             </div>
-            <p className="text-gray-600 text-lg mb-6">Limited time offers</p>
+            <p className="text-gray-600 text-lg font-light max-w-2xl mx-auto mb-8">Exclusive pieces available for a limited time</p>
 
-            <div className="flex justify-center gap-4" data-cursor="sale">
+            <div className="flex justify-center gap-6" data-cursor="sale">
               {[
                 { label: 'Days', value: timeLeft.days },
                 { label: 'Hours', value: timeLeft.hours },
@@ -402,20 +332,22 @@ export default function Home() {
               ].map((time, index) => (
                 <div 
                   key={index} 
-                  className={`bg-white rounded-lg p-4 shadow-lg min-w-[80px] transition-transform hover:scale-105 ${index === 3 ? 'animate-pulse-custom' : ''}`}
+                  className={`bg-white/90 backdrop-blur-sm border border-olive-gold/20 rounded-md p-6 shadow-sm min-w-[90px] transition-transform hover:scale-102 luxury-hover shared-element-transition ${index === 3 ? 'animate-pulse-custom' : ''}`}
                 >
-                  <div className="text-3xl font-bold text-red-500">
+                  <div className="text-3xl font-serif font-normal text-muted-rust mb-1 fade-transition">
                     {String(time.value).padStart(2, '0')}
                   </div>
-                  <div className="text-sm text-gray-600">{time.label}</div>
+                  <div className="text-xs uppercase tracking-wider text-deep-navy/70 font-medium fade-shift-transition">
+                    {time.label}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {loading ? (
-              [1, 2, 3, 4].map((i) => (
+              [1, 2, 3].map((i) => (
                 <div key={i} className="animate-pulse">
                   <div className="aspect-[3/4] bg-gray-200 rounded-2xl mb-4" />
                   <div className="h-4 bg-gray-200 rounded mb-2" />
@@ -423,57 +355,14 @@ export default function Home() {
                 </div>
               ))
             ) : flashSaleProducts.length > 0 ? (
-              flashSaleProducts.map((product) => {
-                const price = product.sale_price || product.base_price;
-                const hasDiscount = product.sale_price && product.sale_price < product.base_price;
-                const discountPercent = hasDiscount 
-                  ? Math.round((1 - product.sale_price! / product.base_price) * 100)
-                  : 0;
-                const mainImage = Array.isArray(product.images) && product.images.length > 0
-                  ? product.images[0]
-                  : 'https://images.pexels.com/photos/1926769/pexels-photo-1926769.jpeg?auto=compress&cs=tinysrgb&w=400';
-
-                return (
-                  <div
-                    key={product.id}
-                    data-cursor="sale"
-                    className="group cursor-pointer"
-                  >
-                    <Link to={`/product/${product.id}`} className="relative overflow-hidden rounded-2xl mb-4 bg-gray-100 aspect-[3/4] block">
-                      <img
-                        src={mainImage}
-                        alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                      <div className="absolute top-4 left-4">
-                        <span className="px-4 py-2 bg-red-500 text-white text-lg font-bold rounded-full">
-                          -{discountPercent}%
-                        </span>
-                      </div>
-                      <div className="absolute bottom-4 left-4 right-4">
-                        <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm font-medium">Limited Stock</span>
-                            <span className="text-xs text-red-500 font-semibold">Hurry!</span>
-                          </div>
-                          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div className="h-full bg-red-500 rounded-full w-[35%]" />
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                    <Link to={`/product/${product.id}`}>
-                      <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
-                    </Link>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl font-bold text-red-500">${price.toFixed(2)}</span>
-                      {hasDiscount && (
-                        <span className="text-gray-400 line-through">${product.base_price.toFixed(2)}</span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
+              flashSaleProducts.map((product) => (
+                <div
+                  key={product.id}
+                  data-cursor="sale"
+                >
+                  <ProductCard product={product} />
+                </div>
+              ))
             ) : (
               <div className="col-span-full text-center py-12">
                 <p className="text-gray-600">No flash sale products available</p>
@@ -483,29 +372,34 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-20 bg-gray-900 text-white w-full" data-scroll>
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-teal-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <ShoppingBag size={32} />
+      <section className="py-24 bg-deep-navy bg-luxury-marble text-white w-full" data-scroll>
+        <div className="w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-display mb-6 tracking-wide fade-transition slide-up-enter slide-up-enter-active">The BTN Experience</h2>
+            <p className="text-gray-300 text-lg font-light max-w-2xl mx-auto fade-shift-transition">Discover why discerning clients choose our collections</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            <div className="text-center luxury-parallax fade-transition">
+              <div className="w-20 h-20 bg-olive-gold/90 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-6 shared-element-transition">
+                <ShoppingBag size={24} strokeWidth={1.5} className="text-white fade-transition" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Free Shipping</h3>
-              <p className="text-gray-400">On orders over $50</p>
+              <h3 className="text-xl font-serif mb-3 fade-shift-transition">Swift Delivery</h3>
+              <p className="text-gray-300 font-light fade-shift-transition">Premium express shipping on all orders</p>
             </div>
-            <div className="text-center">
-              <div className="w-20 h-20 bg-teal-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <ArrowRight size={32} />
+            <div className="text-center luxury-parallax fade-transition">
+              <div className="w-20 h-20 bg-olive-gold/90 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-6 shared-element-transition">
+                <ArrowRight size={24} strokeWidth={1.5} className="text-white fade-transition" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Easy Returns</h3>
-              <p className="text-gray-400">30-day return policy</p>
+              <h3 className="text-xl font-serif mb-3 fade-shift-transition">Hassle-Free Returns</h3>
+              <p className="text-gray-300 font-light fade-shift-transition">30-day satisfaction guarantee</p>
             </div>
-            <div className="text-center">
-              <div className="w-20 h-20 bg-teal-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Sparkles size={32} />
+            <div className="text-center luxury-parallax fade-transition">
+              <div className="w-20 h-20 bg-olive-gold/90 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-6 shared-element-transition">
+                <Sparkles size={24} strokeWidth={1.5} className="text-white fade-transition" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Premium Quality</h3>
-              <p className="text-gray-400">Handpicked products</p>
+              <h3 className="text-xl font-serif mb-3 fade-shift-transition">Artisanal Quality</h3>
+              <p className="text-gray-300 font-light fade-shift-transition">Curated premium materials</p>
             </div>
           </div>
         </div>

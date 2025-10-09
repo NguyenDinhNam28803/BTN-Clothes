@@ -2,10 +2,12 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Grid2x2 as Grid, List, SlidersHorizontal, ShoppingCart, Tag } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { Product } from '../types';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useToast } from '../components/Toast';
+import { getProducts } from '../lib/products';
+import { getProductImage } from '../data/productImages';
+import { Product } from '../types';
 
 export default function Shop() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -26,9 +28,84 @@ export default function Shop() {
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { showToast } = useToast();
 
+  const loadInitialData = useCallback(async () => {
+    setLoading(true);
+    try {
+      console.log('Bắt đầu tải dữ liệu sản phẩm...');
+      
+      // Thử truy vấn trực tiếp để kiểm tra kết nối
+      const { data: directProducts, error: directError } = await supabase
+        .from('products')
+        .select('count(*)')
+        .eq('status', 'active');
+        
+      if (directError) {
+        console.error('Lỗi truy vấn trực tiếp:', directError);
+      } else {
+        console.log('Kết nối trực tiếp thành công. Số lượng sản phẩm:', directProducts);
+      }
+      
+      // Sử dụng hàm getProducts để lấy tất cả sản phẩm
+      const products = await getProducts();
+      console.log('Sản phẩm đã tải:', products?.length || 0);
+      
+      // Lấy danh mục từ Supabase
+      const categoriesResult = await supabase.from('categories').select('id, slug');
+      console.log('Danh mục đã tải:', categoriesResult.data?.length || 0);
+      
+      if (!products || products.length === 0) {
+        console.warn('Không có sản phẩm nào được tìm thấy');
+        throw new Error('Không thể lấy dữ liệu sản phẩm');
+      }
+
+      const categoryMap: Record<string, string> = {};
+      categoriesResult.data?.forEach(cat => {
+        categoryMap[cat.slug] = cat.id;
+      });
+
+      setCategories(categoryMap);
+      
+      // Chuyển đổi hình ảnh sản phẩm để đảm bảo đường dẫn chính xác
+      const productsWithProcessedImages = products.map(product => {
+        // Parse images if they're stored as a JSON string
+        let imageArray: string[] = [];
+        if (typeof product.images === 'string') {
+          try {
+            imageArray = JSON.parse(product.images);
+          } catch (e) {
+            console.error('Error parsing product images:', e);
+            imageArray = [];
+          }
+        } else if (Array.isArray(product.images)) {
+          imageArray = product.images;
+        }
+        
+        const processedImages = imageArray.map(imagePath => {
+          const image = getProductImage(imagePath);
+          return image || imagePath;
+        });
+        
+        return {
+          ...product,
+          images: processedImages,
+          sale_price: product.sale_price || undefined
+        } as Product;
+      });
+      
+      console.log('Sản phẩm đã xử lý:', productsWithProcessedImages.length);
+      setAllProducts(productsWithProcessedImages);
+      filterAndSortProducts(productsWithProcessedImages, selectedCategory, sortBy, searchQuery, priceRange);
+    } catch (error) {
+      console.error('Error loading products:', error);
+      showToast('Không thể tải sản phẩm', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedCategory, sortBy, searchQuery, priceRange, showToast]);
+
   useEffect(() => {
     loadInitialData();
-  }, []);
+  }, [loadInitialData]);
   
   useEffect(() => {
     if (searchParams.get('focusSearch') === 'true' && searchInputRef.current) {
@@ -59,32 +136,6 @@ export default function Shop() {
       showToast(`Voucher ${voucherFromURL} đã được kích hoạt. Thêm sản phẩm vào giỏ hàng để sử dụng!`, 'success');
     }
   }, [searchParams, showToast]);
-
-  const loadInitialData = async () => {
-    setLoading(true);
-    try {
-      const [productsResult, categoriesResult] = await Promise.all([
-        supabase.from('products').select('*').eq('status', 'active'),
-        supabase.from('categories').select('id, slug')
-      ]);
-
-      if (productsResult.error) throw productsResult.error;
-
-      const categoryMap: Record<string, string> = {};
-      categoriesResult.data?.forEach(cat => {
-        categoryMap[cat.slug] = cat.id;
-      });
-
-      setCategories(categoryMap);
-      setAllProducts(productsResult.data || []);
-      filterAndSortProducts(productsResult.data || [], selectedCategory, sortBy, searchQuery, priceRange);
-    } catch (error) {
-      console.error('Error loading products:', error);
-      showToast('Failed to load products', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filterAndSortProducts = useCallback((
     productList: Product[],
@@ -120,7 +171,12 @@ export default function Shop() {
         filtered.sort((a, b) => b.base_price - a.base_price);
         break;
       case 'newest':
-        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        filtered.sort((a, b) => {
+          // Nếu một trong hai created_at không tồn tại, đặt nó xuống cuối
+          if (!a.created_at) return 1;
+          if (!b.created_at) return -1;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
         break;
       default:
         filtered.sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0));
@@ -182,22 +238,22 @@ export default function Shop() {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-16">
+    <div className="min-h-screen pt-24 pb-16 bg-shop-pattern">
       <div
-        className="absolute inset-0 z-0"
+        className="absolute inset-0 z-0 opacity-50"
         style={{
-          backgroundImage: 'radial-gradient(125% 125% at 50% 90%, #ffffff 40%, #3b82f6 100%)',
+          backgroundImage: 'linear-gradient(to bottom, rgba(245, 243, 238, 0.9) 0%, rgba(245, 243, 238, 0.7) 100%)',
           backgroundSize: '100% 100%',
         }}
       />
 
       <div className="container mx-auto px-4 relative z-10">
         {activeVoucher && (
-          <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-6 rounded-lg flex items-center gap-3">
-            <Tag className="text-yellow-500" size={20} />
+          <div className="bg-discount-badge text-white p-4 mb-6 rounded-lg flex items-center gap-3 shadow-lg">
+            <Tag className="text-white" size={20} />
             <div>
-              <p className="font-semibold text-yellow-800">
-                Voucher <span className="font-mono bg-yellow-200 px-2 py-0.5 rounded">{activeVoucher}</span> đã được kích hoạt!
+              <p className="font-medium font-montserrat tracking-wide">
+                Voucher <span className="font-cormorant bg-white/10 backdrop-blur-sm px-3 py-1 rounded">{activeVoucher}</span> đã được kích hoạt!
               </p>
               <p className="text-yellow-700 text-sm">
                 Thêm sản phẩm vào giỏ hàng và tiến hành thanh toán để áp dụng voucher này.
@@ -213,9 +269,9 @@ export default function Shop() {
 
         <div className="flex flex-col lg:flex-row gap-8">
           {showFilters && (
-            <aside className="lg:w-64 space-y-6" data-aos="fade-right">
-              <div className="bg-white rounded-2xl p-6 shadow-lg">
-                <h3 className="font-semibold text-lg mb-4">Categories</h3>
+            <aside className="lg:w-64 space-y-6 bg-shop-sidebar p-2 rounded-2xl" data-aos="fade-right">
+              <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-olive-gold/10">
+                <h3 className="font-cormorant font-medium text-xl mb-4 text-deep-navy tracking-wide">Categories</h3>
                 <div className="space-y-2">
                   {['all', 'men', 'women', 'kids', 'accessories'].map((category) => (
                     <label key={category} className="flex items-center gap-2 cursor-pointer">
@@ -232,8 +288,8 @@ export default function Shop() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl p-6 shadow-lg">
-                <h3 className="font-semibold text-lg mb-4">Price Range</h3>
+              <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-olive-gold/10">
+                <h3 className="font-cormorant font-medium text-xl mb-4 text-deep-navy tracking-wide">Price Range</h3>
                 <div className="space-y-4">
                   <input
                     type="range"
@@ -264,7 +320,7 @@ export default function Shop() {
           )}
 
           <main className="flex-1">
-            <div className="bg-white rounded-2xl p-6 shadow-lg mb-6" data-aos="fade-up">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-lg mb-6 border border-olive-gold/10 bg-shop-header" data-aos="fade-up">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="flex items-center gap-4 flex-1 w-full sm:w-auto">
                   <button
@@ -353,15 +409,28 @@ export default function Shop() {
               <div
                 className={`grid gap-4 ${
                   viewMode === 'grid'
-                    ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+                    ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4'
                     : 'grid-cols-1'
                 }`}
               >
                 {products.map((product, index) => {
                   const price = product.sale_price || product.base_price;
                   const hasDiscount = product.sale_price && product.sale_price < product.base_price;
-                  const mainImage = Array.isArray(product.images) && product.images.length > 0
-                    ? product.images[0]
+                  // Parse images if they're stored as a JSON string
+                  let imageArray: string[] = [];
+                  if (typeof product.images === 'string') {
+                    try {
+                      imageArray = JSON.parse(product.images);
+                    } catch (e) {
+                      console.error('Error parsing product images:', e);
+                      imageArray = [];
+                    }
+                  } else if (Array.isArray(product.images)) {
+                    imageArray = product.images;
+                  }
+                  
+                  const mainImage = imageArray.length > 0
+                    ? imageArray[0]
                     : 'https://images.pexels.com/photos/1926769/pexels-photo-1926769.jpeg?auto=compress&cs=tinysrgb&w=400';
 
                   return (
@@ -372,18 +441,18 @@ export default function Shop() {
                       data-cursor="shirt"
                       className={`group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 ${
                         viewMode === 'list' ? 'flex' : 'flex flex-col'
-                      }`}
+                      } slide-transition`}
                     >
                       <Link
                         to={`/product/${product.id}`}
-                        className={`relative overflow-hidden bg-gray-100 flex-shrink-0 ${
+                        className={`relative overflow-hidden bg-gray-100 flex-shrink-0 shared-element-container ${
                           viewMode === 'list' ? 'w-64 h-80' : 'w-full aspect-[4/5]'
                         }`}
                       >
                         <img
                           src={mainImage}
                           alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          className="w-full h-full object-cover shared-element-transition image-zoom-effect"
                           loading="lazy"
                         />
                         <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
@@ -404,7 +473,7 @@ export default function Shop() {
                             e.preventDefault();
                             toggleWishlist(product.id);
                           }}
-                          className="absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white hover:scale-110 transition-all z-10"
+                          className="absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white hover:scale-110 transition-all z-10 fade-transition"
                           aria-label="Add to wishlist"
                         >
                           <span className={`text-lg ${isInWishlist(product.id) ? 'text-red-500' : 'text-gray-400'}`}>
@@ -413,10 +482,10 @@ export default function Shop() {
                         </button>
                       </Link>
 
-                      <div className={`p-3 flex flex-col flex-1 ${viewMode === 'list' ? 'justify-between' : ''}`}>
+                      <div className={`p-3 flex flex-col flex-1 ${viewMode === 'list' ? 'justify-between' : ''} fade-shift-transition`}>
                         <div>
                           <Link to={`/product/${product.id}`}>
-                            <h3 className="font-semibold text-base mb-1 line-clamp-1 group-hover:text-teal-500 transition-colors">
+                            <h3 className="font-semibold text-base mb-1 line-clamp-1 group-hover:text-olive-gold transition-colors duration-300">
                               {product.name}
                             </h3>
                           </Link>
@@ -437,7 +506,7 @@ export default function Shop() {
                               e.stopPropagation();
                               handleAddToCart(product.id);
                             }}
-                            className="w-full flex items-center justify-center gap-1 py-1.5 text-sm bg-teal-500 text-white font-medium rounded-lg hover:bg-teal-600 active:scale-95 transition-all"
+                            className="w-full flex items-center justify-center gap-1 py-1.5 text-sm bg-olive-gold text-white font-medium rounded-lg hover:bg-olive-gold/90 active:scale-95 transition-all duration-300 fade-shift-transition"
                           >
                             <ShoppingCart size={16} />
                             <span>Add to Cart</span>

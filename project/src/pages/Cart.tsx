@@ -3,6 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
+import { getProductImage, getProductImages } from '../data/productImages';
 
 export default function Cart() {
   const navigate = useNavigate();
@@ -18,19 +19,16 @@ export default function Cart() {
   const [searchParams] = useSearchParams();
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Calculate order values
   const subtotal = cartItems.reduce((sum, item) => {
     const price = item.product?.sale_price || item.product?.base_price || 0;
     const adjustment = item.variant?.price_adjustment || 0;
     return sum + (price + adjustment) * item.quantity;
   }, 0);
   
-  // Calculate discount based on applied voucher
   let discount = 0;
   let shippingDiscount = false;
   
   if (voucherApplied) {
-    // Apply discount based on voucher type
     const vouchers = {
       'WELCOME20': { discount: 20, type: 'percentage' },
       'SAVE50': { discount: 50, type: 'fixed' },
@@ -44,7 +42,7 @@ export default function Cart() {
       if (voucher.type === 'percentage') {
         discount = subtotal * (voucher.discount / 100);
       } else if (voucher.type === 'fixed') {
-        discount = Math.min(voucher.discount, subtotal); // Don't discount more than subtotal
+        discount = Math.min(voucher.discount, subtotal); 
       } else if (voucher.type === 'shipping') {
         shippingDiscount = true;
       }
@@ -54,11 +52,9 @@ export default function Cart() {
   const shipping = (subtotal > 100 || shippingDiscount) ? 0 : 10;
   const total = subtotal - discount;
 
-  // Function to apply voucher code
   const applyVoucherCode = useCallback((code: string) => {
     setIsUpdating(true);
     
-    // Simple voucher validation and application
     const vouchers = {
       'WELCOME20': { discount: 20, type: 'percentage' },
       'SAVE50': { discount: 50, type: 'fixed' },
@@ -177,9 +173,43 @@ export default function Cart() {
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
               {cartItems.map((item) => {
                 const productName = item.product?.name || 'Unknown Product';
-                const productImage = item.product?.images && item.product.images.length > 0 
-                  ? item.product.images[0] 
-                  : 'https://images.pexels.com/photos/1926769/pexels-photo-1926769.jpeg?auto=compress&cs=tinysrgb&w=200';
+                
+                // Get product image from the helper functions
+                let productImage;
+                if (item.product?.id) {
+                  // First try to get images from product ID
+                  const productImages = getProductImages(item.product.id);
+                  if (productImages.length > 0) {
+                    productImage = productImages[0];
+                  } else {
+                    // Parse images if they're stored as a JSON string
+                    let imageArray: string[] = [];
+                    if (item.product?.images) {
+                      if (typeof item.product.images === 'string') {
+                        try {
+                          imageArray = JSON.parse(item.product.images);
+                        } catch (e) {
+                          console.error('Error parsing product images:', e);
+                          imageArray = [];
+                        }
+                      } else if (Array.isArray(item.product.images)) {
+                        imageArray = item.product.images;
+                      }
+                      
+                      if (imageArray.length > 0) {
+                        // Then try to get by image path
+                        productImage = getProductImage(imageArray[0]) || imageArray[0];
+                      } else {
+                        productImage = 'https://images.pexels.com/photos/1926769/pexels-photo-1926769.jpeg?auto=compress&cs=tinysrgb&w=200';
+                      }
+                    } else {
+                      productImage = 'https://images.pexels.com/photos/1926769/pexels-photo-1926769.jpeg?auto=compress&cs=tinysrgb&w=200';
+                    }
+                  }
+                } else {
+                  productImage = 'https://images.pexels.com/photos/1926769/pexels-photo-1926769.jpeg?auto=compress&cs=tinysrgb&w=200';
+                }
+                
                 const productPrice = (item.product?.sale_price || item.product?.base_price || 0) + 
                   (item.variant?.price_adjustment || 0);
                 const variantSize = item.variant?.size || '-';
