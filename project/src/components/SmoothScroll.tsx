@@ -16,7 +16,6 @@ export default function SmoothScroll({ children }: SmoothScrollProps) {
       gestureOrientation: 'vertical',
       smoothWheel: true,
       wheelMultiplier: 1,
-      smoothTouch: false,
       touchMultiplier: 2,
       infinite: false,
     });
@@ -36,7 +35,7 @@ export default function SmoothScroll({ children }: SmoothScrollProps) {
   return (
     <div 
       id="smooth-scroll-wrapper" 
-      className="m-0 p-0 w-full overflow-x-hidden"
+      className="m-0 p-0 w-screen overflow-x-hidden"
     >
       {children}
     </div>
