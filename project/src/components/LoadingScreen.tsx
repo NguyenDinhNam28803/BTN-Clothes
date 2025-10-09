@@ -54,7 +54,7 @@ export default function LoadingScreen({ onLoadComplete }: { onLoadComplete: () =
         <video
           className="absolute inset-0 w-full h-full object-cover"
           style={{ opacity: 0.4, filter: 'blur(4px) brightness(0.7) contrast(1.1)' }}
-          src="/src/Assets/IMG/BTN.mp4"
+          src="https://assets.awwwards.com/awards/element/2025/07/688b31c2a1db8974510816.mp4"
           autoPlay
           loop
           muted
