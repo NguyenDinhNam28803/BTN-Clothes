@@ -1,12 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
-import { CreditCard, MapPin, Truck, CheckCircle, Package, LogIn, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { CreditCard, MapPin, Truck, CheckCircle, Package, LogIn } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { useToast } from '../components/Toast';
-import { supabase } from '../lib/supabase';
-import { v4 as uuidv4 } from 'uuid';
-import { Address } from '../types';
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -25,8 +22,6 @@ export default function Checkout() {
     state: '',
     postalCode: '',
   });
-  
-  const [saveAddressOption, setSaveAddressOption] = useState(false);
   
   // State cho thông tin đơn hàng
   const [orderSummary, setOrderSummary] = useState({
@@ -193,185 +188,71 @@ export default function Checkout() {
   // Function to handle order placement
   const handlePlaceOrder = async () => {
     // Show processing notification
-      showToast('Processing your order...', 'info');    try {
-      // Generate unique ID for order
-      const orderId = uuidv4();
-      const orderNumber = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
-      const now = new Date().toISOString();
-      
-      // Lưu địa chỉ nếu người dùng chọn lưu
-      if (user && saveAddressOption) {
-        const fullName = shippingInfo.fullName.trim();
-        if (fullName) {
-          const addressData = {
-            id: uuidv4(),
-            user_id: user.id,
-            full_name: fullName,
-            phone: shippingInfo.phone,
-            address_line1: shippingInfo.address,
-            city: shippingInfo.city,
-            state: shippingInfo.state,
-            postal_code: shippingInfo.postalCode,
-            is_default: savedAddresses.length === 0, // Nếu là địa chỉ đầu tiên, đặt làm mặc định
-            created_at: now,
-            updated_at: now
-          };
-          
-          // Lưu địa chỉ mới vào cơ sở dữ liệu
-          const { error: addressError } = await supabase
-            .from('addresses')
-            .insert(addressData);
-            
-          if (addressError) {
-            console.error('Failed to save address:', addressError);
-            // Vẫn tiếp tục xử lý đơn hàng, chỉ ghi log lỗi
-          }
-        }
+    showToast('Đang xử lý đơn hàng...', 'info');
+    
+    // Generate a random order ID
+    const newOrderId = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
+    
+    // Create order object
+    const order = {
+      id: newOrderId,
+      date: new Date().toISOString(),
+      status: 'processing',
+      total: total,
+      items: cartItems.map(item => ({
+        id: item.id,
+        product_name: item.product?.name || 'Product',
+        quantity: item.quantity,
+        price: (item.product?.sale_price || item.product?.base_price || 0) + (item.variant?.price_adjustment || 0),
+        image_url: item.product?.images?.[0] || 'https://via.placeholder.com/100',
+        variant: item.variant
+      })),
+      shipping_address: {
+        fullName: shippingInfo.fullName,
+        address: shippingInfo.address,
+        city: shippingInfo.city,
+        postalCode: shippingInfo.postalCode,
+        phone: shippingInfo.phone
       }
-      
-      // Create order record
-      const orderData = {
-        id: orderId,
-        user_id: user?.id,
-        order_number: orderNumber,
-        status: 'processing',
-        total_amount: total,
-        shipping_address: {
-          fullName: shippingInfo.fullName,
-          address: shippingInfo.address,
-          city: shippingInfo.city,
-          postal_code: shippingInfo.postalCode,
-          phone: shippingInfo.phone
-        },
-        payment_method: 'credit_card', // Assuming default payment method
-        payment_status: 'paid',
-        voucher_code: appliedVoucher || null, // Include the voucher code if applied
-        discount_amount: discount,
-        created_at: now,
-        updated_at: now
-      };
-      
-      // Insert order into database
-      const { error: orderError } = await supabase
-        .from('orders')
-        .insert(orderData);
-      
-      if (orderError) {
-        throw orderError;
-      }
-      
+    };
+    
+    // Save order to localStorage with a slight delay to simulate processing
+    setTimeout(() => {
       try {
-        // First insert the order (which establishes ownership)
-        // Then attempt to insert order items with transaction
-        const { error: itemsError } = await supabase
-          .from('order_items')
-          .insert(cartItems.map(item => ({
-            id: uuidv4(),
-            order_id: orderId,
-            product_id: item.product?.id,
-            variant_id: item.variant?.id,
-            quantity: item.quantity,
-            price: (item.product?.sale_price || item.product?.base_price || 0) + (item.variant?.price_adjustment || 0),
-            created_at: now
-          })));
+        // Get existing orders or initialize empty array
+        const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+        existingOrders.push(order);
+        localStorage.setItem('orders', JSON.stringify(existingOrders));
         
-        if (itemsError) {
-          console.error('Error inserting order items:', itemsError);
-          
-          // If error is RLS related, try a different approach with multiple single inserts
-          if (itemsError.message.includes('violates row-level security policy')) {
-            console.log('Attempting to insert order items individually to bypass RLS...');
-            
-            for (const item of cartItems) {
-              const { error: singleItemError } = await supabase
-                .from('order_items')
-                .insert({
-                  id: uuidv4(),
-                  order_id: orderId,
-                  product_id: item.product?.id,
-                  variant_id: item.variant?.id,
-                  quantity: item.quantity,
-                  price: (item.product?.sale_price || item.product?.base_price || 0) + (item.variant?.price_adjustment || 0),
-                  created_at: now
-                });
-                
-              if (singleItemError) {
-                console.error('Error inserting single order item:', singleItemError);
-              }
-            }
-          } else {
-            throw itemsError;
-          }
-        }
+        // Update orders list
+        const ordersList = JSON.parse(localStorage.getItem('ordersList') || '[]');
+        ordersList.push({
+          id: newOrderId,
+          date: new Date().toISOString(),
+          status: 'processing',
+          total: total,
+          items_count: cartItems.length
+        });
+        localStorage.setItem('ordersList', JSON.stringify(ordersList));
+        
+        // Set order as complete and store the ID
+        setOrderId(newOrderId);
+        setOrderComplete(true);
+        
+        // Clear the cart
+        clearCart();
+        
+        // Remove checkout data from localStorage
+        localStorage.removeItem('shippingInfo');
+        localStorage.removeItem('orderSummary');
+        
+        // Show success notification
+        showToast('Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại BTN Clothes.', 'success');
       } catch (error) {
-        console.error('Error in order items insertion:', error);
-        throw error;
+        console.error('Failed to save order:', error);
+        showToast('Đã xảy ra lỗi khi xử lý đơn hàng. Vui lòng thử lại.', 'error');
       }
-      
-      // Update product variant stock quantities
-      for (const item of cartItems) {
-        if (item.variant?.id) {
-          const { data: variantData, error: stockError } = await supabase
-            .from('product_variants')
-            .select('stock_quantity')
-            .eq('id', item.variant.id)
-            .single();
-          
-          if (!stockError && variantData) {
-            const newStock = Math.max(0, variantData.stock_quantity - item.quantity);
-            await supabase
-              .from('product_variants')
-              .update({ stock_quantity: newStock })
-              .eq('id', item.variant.id);
-          }
-        }
-      }
-      
-      // If order used a voucher, mark it as used
-      if (appliedVoucher && user) {
-        const { data: voucherData, error: voucherError } = await supabase
-          .from('vouchers')
-          .select('id')
-          .eq('code', appliedVoucher)
-          .single();
-          
-        if (!voucherError && voucherData) {
-          // Update user_vouchers to mark this voucher as used
-          await supabase
-            .from('user_vouchers')
-            .update({
-              is_used: true,
-              used_at: now
-            })
-            .eq('user_id', user.id)
-            .eq('voucher_id', voucherData.id);
-            
-          // Also increment the used_count on the voucher itself
-          await supabase
-            .from('vouchers')
-            .update({
-              used_count: supabase.rpc('increment', { x: 1 })
-            })
-            .eq('id', voucherData.id);
-        }
-      }
-      
-      // Complete the order process
-      setOrderId(orderNumber);
-      setOrderComplete(true);
-      
-      // Clear cart and local storage
-      clearCart();
-      localStorage.removeItem('shippingInfo');
-      localStorage.removeItem('orderSummary');
-      localStorage.removeItem('activeVoucher');
-      
-      // Show success notification
-      showToast('Order placed successfully! Thank you for shopping with BTN Clothes.', 'success');
-    } catch (error) {
-      console.error('Failed to save order:', error);
-      showToast('An error occurred while processing your order. Please try again.', 'error');
-    }
+    }, 1000);
   };
 
   if (orderComplete) {
@@ -696,7 +577,14 @@ export default function Checkout() {
                   <h2 className="text-2xl font-serif mb-6">Payment Method</h2>
                   <div className="space-y-4">
                     <label className="flex items-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-teal-500 transition-colors">
-                      <input type="radio" name="payment" defaultChecked className="mr-4" />
+                      <input 
+                        type="radio" 
+                        name="payment" 
+                        value="credit_card"
+                        checked={paymentMethod === 'credit_card'}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="mr-4" 
+                      />
                       <div className="flex items-center gap-3">
                         <CreditCard size={24} />
                         <span className="font-semibold">Credit/Debit Card</span>
@@ -733,12 +621,26 @@ export default function Checkout() {
                     </div>
 
                     <label className="flex items-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-teal-500 transition-colors">
-                      <input type="radio" name="payment" className="mr-4" />
+                      <input 
+                        type="radio" 
+                        name="payment" 
+                        value="paypal"
+                        checked={paymentMethod === 'paypal'}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="mr-4" 
+                      />
                       <span className="font-semibold">PayPal</span>
                     </label>
 
                     <label className="flex items-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-teal-500 transition-colors">
-                      <input type="radio" name="payment" className="mr-4" />
+                      <input 
+                        type="radio" 
+                        name="payment" 
+                        value="cash_on_delivery"
+                        checked={paymentMethod === 'cash_on_delivery'}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="mr-4" 
+                      />
                       <span className="font-semibold">Cash on Delivery</span>
                     </label>
                   </div>
