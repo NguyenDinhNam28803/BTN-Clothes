@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { CreditCard, MapPin, Truck, CheckCircle, Package, LogIn } from 'lucide-react';
+import { CreditCard, MapPin, Truck, CheckCircle } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { useToast } from '../components/Toast';
+import { supabase } from '../lib/supabase';
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ export default function Checkout() {
     state: '',
     postalCode: '',
   });
+  const [paymentMethod, setPaymentMethod] = useState('credit_card');
   
   // State cho thông tin đơn hàng
   const [orderSummary, setOrderSummary] = useState({
@@ -88,73 +90,101 @@ export default function Checkout() {
   const tax = subtotal * 0.1;
   
   // Function to handle order placement
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     // Show processing notification
     showToast('Đang xử lý đơn hàng...', 'info');
     
-    // Generate a random order ID
-    const newOrderId = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
+    // Validate shipping info
+    if (!shippingInfo.fullName || !shippingInfo.phone || !shippingInfo.address || !shippingInfo.city) {
+      showToast('Vui lòng điền đầy đủ thông tin giao hàng', 'error');
+      return;
+    }
     
-    // Create order object
-    const order = {
-      id: newOrderId,
-      date: new Date().toISOString(),
-      status: 'processing',
-      total: total,
-      items: cartItems.map(item => ({
-        id: item.id,
-        product_name: item.product?.name || 'Product',
-        quantity: item.quantity,
-        price: (item.product?.sale_price || item.product?.base_price || 0) + (item.variant?.price_adjustment || 0),
-        image_url: item.product?.images?.[0] || 'https://via.placeholder.com/100',
-        variant: item.variant
-      })),
-      shipping_address: {
+    try {
+      // Generate a unique order number
+      const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      
+      // Prepare shipping address object
+      const shippingAddress = {
         fullName: shippingInfo.fullName,
+        email: shippingInfo.email,
+        phone: shippingInfo.phone,
         address: shippingInfo.address,
         city: shippingInfo.city,
-        postalCode: shippingInfo.postalCode,
-        phone: shippingInfo.phone
-      }
-    };
-    
-    // Save order to localStorage with a slight delay to simulate processing
-    setTimeout(() => {
-      try {
-        // Get existing orders or initialize empty array
-        const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-        existingOrders.push(order);
-        localStorage.setItem('orders', JSON.stringify(existingOrders));
-        
-        // Update orders list
-        const ordersList = JSON.parse(localStorage.getItem('ordersList') || '[]');
-        ordersList.push({
-          id: newOrderId,
-          date: new Date().toISOString(),
+        state: shippingInfo.state,
+        postalCode: shippingInfo.postalCode
+      };
+      
+      // Create order in database
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: user?.id,
+          order_number: orderNumber,
           status: 'processing',
-          total: total,
-          items_count: cartItems.length
-        });
-        localStorage.setItem('ordersList', JSON.stringify(ordersList));
-        
-        // Set order as complete and store the ID
-        setOrderId(newOrderId);
-        setOrderComplete(true);
-        
-        // Clear the cart
-        clearCart();
-        
-        // Remove checkout data from localStorage
-        localStorage.removeItem('shippingInfo');
-        localStorage.removeItem('orderSummary');
-        
-        // Show success notification
-        showToast('Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại BTN Clothes.', 'success');
-      } catch (error) {
-        console.error('Failed to save order:', error);
-        showToast('Đã xảy ra lỗi khi xử lý đơn hàng. Vui lòng thử lại.', 'error');
+          total_amount: total,
+          shipping_address: shippingAddress,
+          payment_method: paymentMethod,
+          payment_status: 'pending',
+          discount_amount: discount
+        })
+        .select()
+        .single();
+      
+      if (orderError) {
+        console.error('Order creation error:', orderError);
+        throw new Error('Không thể tạo đơn hàng');
       }
-    }, 1000);
+      
+      // Create order items
+      const orderItems = cartItems.map(item => ({
+        order_id: orderData.id,
+        product_id: item.product_id,
+        variant_id: item.variant_id,
+        quantity: item.quantity,
+        price: (item.product?.sale_price || item.product?.base_price || 0) + (item.variant?.price_adjustment || 0)
+      }));
+      
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+      
+      if (itemsError) {
+        console.error('Order items creation error:', itemsError);
+        throw new Error('Không thể tạo chi tiết đơn hàng');
+      }
+      
+      // Clear cart items from database
+      const { error: clearCartError } = await supabase
+        .from('cart_items')
+        .delete()
+        .eq('user_id', user?.id);
+      
+      if (clearCartError) {
+        console.error('Clear cart error:', clearCartError);
+      }
+      
+      // Set order as complete
+      setOrderId(orderNumber);
+      setOrderComplete(true);
+      
+      // Clear the cart in context
+      clearCart();
+      
+      // Remove checkout data from localStorage
+      localStorage.removeItem('shippingInfo');
+      localStorage.removeItem('orderSummary');
+      
+      // Show success notification
+      showToast('Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại BTN Clothes.', 'success');
+      
+    } catch (error) {
+      console.error('Failed to create order:', error);
+      showToast(
+        error instanceof Error ? error.message : 'Đã xảy ra lỗi khi xử lý đơn hàng. Vui lòng thử lại.',
+        'error'
+      );
+    }
   };
 
   if (orderComplete) {
@@ -358,7 +388,14 @@ export default function Checkout() {
                   <h2 className="text-2xl font-serif mb-6">Payment Method</h2>
                   <div className="space-y-4">
                     <label className="flex items-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-teal-500 transition-colors">
-                      <input type="radio" name="payment" defaultChecked className="mr-4" />
+                      <input 
+                        type="radio" 
+                        name="payment" 
+                        value="credit_card"
+                        checked={paymentMethod === 'credit_card'}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="mr-4" 
+                      />
                       <div className="flex items-center gap-3">
                         <CreditCard size={24} />
                         <span className="font-semibold">Credit/Debit Card</span>
@@ -395,12 +432,26 @@ export default function Checkout() {
                     </div>
 
                     <label className="flex items-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-teal-500 transition-colors">
-                      <input type="radio" name="payment" className="mr-4" />
+                      <input 
+                        type="radio" 
+                        name="payment" 
+                        value="paypal"
+                        checked={paymentMethod === 'paypal'}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="mr-4" 
+                      />
                       <span className="font-semibold">PayPal</span>
                     </label>
 
                     <label className="flex items-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-teal-500 transition-colors">
-                      <input type="radio" name="payment" className="mr-4" />
+                      <input 
+                        type="radio" 
+                        name="payment" 
+                        value="cash_on_delivery"
+                        checked={paymentMethod === 'cash_on_delivery'}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="mr-4" 
+                      />
                       <span className="font-semibold">Cash on Delivery</span>
                     </label>
                   </div>

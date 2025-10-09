@@ -7,13 +7,16 @@ import {
   Tag,
   Star,
   Settings,
-  TrendingUp,
   DollarSign,
   ShoppingBag,
   AlertCircle,
+  X,
+  Plus,
+  Edit2,
+  Trash2,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { Product, Order } from '../types';
+import { Product, Order, Category } from '../types';
 import { useToast } from '../components/Toast';
 
 export default function Admin() {
@@ -22,6 +25,7 @@ export default function Admin() {
   
   // State for data
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -38,6 +42,23 @@ export default function Admin() {
   const [orderSearch, setOrderSearch] = useState('');
   const [orderStatus, setOrderStatus] = useState('all');
   
+  // Modal states
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  
+  // Form state
+  const [productForm, setProductForm] = useState({
+    name: '',
+    description: '',
+    base_price: '',
+    sale_price: '',
+    category_id: '',
+    status: 'active' as 'active' | 'inactive',
+    image_url: '',
+  });
+  
   useEffect(() => {
     loadData();
   }, []);
@@ -46,6 +67,7 @@ export default function Admin() {
     setLoading(true);
     try {
       await Promise.all([
+        loadCategories(),
         loadProducts(),
         loadOrders(),
         loadStats()
@@ -58,10 +80,30 @@ export default function Admin() {
     }
   };
   
+  const loadCategories = async () => {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('name', { ascending: true });
+    
+    if (error) {
+      console.error('Error loading categories:', error);
+    } else {
+      setCategories(data || []);
+    }
+  };
+  
   const loadProducts = async () => {
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select(`
+        *,
+        category:categories(
+          id,
+          name,
+          slug
+        )
+      `)
       .order('created_at', { ascending: false });
     
     if (error) {
@@ -77,6 +119,7 @@ export default function Admin() {
       .select('*')
       .order('created_at', { ascending: false });
     
+      console.log(data)
     if (error) {
       console.error('Error loading orders:', error);
     } else {
@@ -141,12 +184,113 @@ export default function Admin() {
     }
   };
   
+  const openCreateModal = () => {
+    setEditingProduct(null);
+    setProductForm({
+      name: '',
+      description: '',
+      base_price: '',
+      sale_price: '',
+      category_id: '',
+      status: 'active',
+      image_url: '',
+    });
+    setShowProductModal(true);
+  };
+  
+  const openEditModal = (product: Product) => {
+    setEditingProduct(product);
+    setProductForm({
+      name: product.name,
+      description: product.description || '',
+      base_price: product.base_price.toString(),
+      sale_price: product.sale_price?.toString() || '',
+      category_id: product.category_id,
+      status: product.status,
+      image_url: product.images[0] || '',
+    });
+    setShowProductModal(true);
+  };
+  
+  const openDeleteModal = (product: Product) => {
+    setDeletingProduct(product);
+    setShowDeleteModal(true);
+  };
+  
+  const handleSubmitProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const productData = {
+        name: productForm.name,
+        description: productForm.description,
+        base_price: parseFloat(productForm.base_price),
+        sale_price: productForm.sale_price ? parseFloat(productForm.sale_price) : null,
+        category_id: productForm.category_id,
+        status: productForm.status,
+        image_url: productForm.image_url || null,
+      };
+      
+      if (editingProduct) {
+        // Update existing product
+        const { error } = await supabase
+          .from('products')
+          .update(productData)
+          .eq('id', editingProduct.id);
+        
+        if (error) throw error;
+        showToast('Product updated successfully', 'success');
+      } else {
+        // Create new product
+        const { error } = await supabase
+          .from('products')
+          .insert([productData]);
+        
+        if (error) throw error;
+        showToast('Product created successfully', 'success');
+      }
+      
+      setShowProductModal(false);
+      loadProducts();
+    } catch (error) {
+      console.error('Error saving product:', error);
+      showToast('Failed to save product', 'error');
+    }
+  };
+  
+  const handleDeleteProduct = async () => {
+    if (!deletingProduct) return;
+    
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', deletingProduct.id);
+      
+      if (error) throw error;
+      
+      showToast('Product deleted successfully', 'success');
+      setShowDeleteModal(false);
+      setDeletingProduct(null);
+      loadProducts();
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      showToast('Failed to delete product', 'error');
+    }
+  };
+  
   const getProductStatus = (product: Product) => {
     // This would need to check variants stock
     if (product.status === 'inactive') return 'Inactive';
     // Simplified - in real app would check total stock from variants
     return 'Active';
   };
+
+  const getCategoryName = (id: string) => {
+    if (!id) return 'N/A';
+    const category = categories.find((c) => c.id === id);
+    return category?.name || 'Unknown';
+  }
   
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(productSearch.toLowerCase());
@@ -358,7 +502,11 @@ export default function Admin() {
                   <h1 className="text-3xl font-bold mb-2">Products</h1>
                   <p className="text-gray-600">Manage your product inventory</p>
                 </div>
-                <button className="px-6 py-3 bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition-colors">
+                <button 
+                  onClick={openCreateModal}
+                  className="px-6 py-3 bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition-colors flex items-center gap-2"
+                >
+                  <Plus size={20} />
                   Add New Product
                 </button>
               </div>
@@ -378,6 +526,11 @@ export default function Admin() {
                     className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                   >
                     <option value="all">All Categories</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
                   </select>
                   <select 
                     value={productStatus}
@@ -413,26 +566,34 @@ export default function Admin() {
                         filteredProducts.map((product) => (
                           <tr key={product.id} className="border-b hover:bg-gray-50">
                             <td className="py-3 px-4 font-medium">{product.name}</td>
-                            <td className="py-3 px-4">Category</td>
+                            <td className="py-3 px-4">{getCategoryName(product.category_id)}</td>
                             <td className="py-3 px-4 font-semibold">${(product.sale_price || product.base_price).toFixed(2)}</td>
                             <td className="py-3 px-4">-</td>
                             <td className="py-3 px-4">
                               <span
                                 className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                  product.status === 'active'
-                                    ? 'bg-green-100 text-green-700'
+                                  getProductStatus(product) === 'Active'
+                                    ? 'bg-green-100 text-green-700' 
                                     : 'bg-red-100 text-red-700'
                                 }`}
                               >
-                                {product.status.charAt(0).toUpperCase() + product.status.slice(1)}
+                                {getProductStatus(product)}
                               </span>
                             </td>
                             <td className="py-3 px-4">
                               <div className="flex gap-2">
-                                <button className="text-blue-500 hover:text-blue-600 font-medium">
+                                <button 
+                                  onClick={() => openEditModal(product)}
+                                  className="text-blue-500 hover:text-blue-600 font-medium flex items-center gap-1"
+                                >
+                                  <Edit2 size={16} />
                                   Edit
                                 </button>
-                                <button className="text-red-500 hover:text-red-600 font-medium">
+                                <button 
+                                  onClick={() => openDeleteModal(product)}
+                                  className="text-red-500 hover:text-red-600 font-medium flex items-center gap-1"
+                                >
+                                  <Trash2 size={16} />
                                   Delete
                                 </button>
                               </div>
@@ -544,6 +705,174 @@ export default function Admin() {
           )}
         </main>
       </div>
+      
+      {/* Product Create/Edit Modal */}
+      {showProductModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+              <h2 className="text-2xl font-bold">
+                {editingProduct ? 'Edit Product' : 'Create New Product'}
+              </h2>
+              <button
+                onClick={() => setShowProductModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmitProduct} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold mb-2">Product Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={productForm.name}
+                  onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="Enter product name"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold mb-2">Description</label>
+                <textarea
+                  value={productForm.description}
+                  onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="Enter product description"
+                  rows={4}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Base Price *</label>
+                  <input
+                    type="number"
+                    required
+                    step="0.01"
+                    min="0"
+                    value={productForm.base_price}
+                    onChange={(e) => setProductForm({ ...productForm, base_price: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    placeholder="0.00"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Sale Price</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={productForm.sale_price}
+                    onChange={(e) => setProductForm({ ...productForm, sale_price: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Category *</label>
+                  <select
+                    required
+                    value={productForm.category_id}
+                    onChange={(e) => setProductForm({ ...productForm, category_id: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="">Select a category</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Status *</label>
+                  <select
+                    required
+                    value={productForm.status}
+                    onChange={(e) => setProductForm({ ...productForm, status: e.target.value as 'active' | 'inactive' })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold mb-2">Image URL</label>
+                <input
+                  type="url"
+                  value={productForm.image_url}
+                  onChange={(e) => setProductForm({ ...productForm, image_url: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowProductModal(false)}
+                  className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-6 py-3 bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition-colors"
+                >
+                  {editingProduct ? 'Update Product' : 'Create Product'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && deletingProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full mx-auto mb-4">
+                <AlertCircle className="text-red-600" size={24} />
+              </div>
+              
+              <h2 className="text-2xl font-bold text-center mb-2">Delete Product</h2>
+              <p className="text-gray-600 text-center mb-6">
+                Are you sure you want to delete <strong>{deletingProduct.name}</strong>? This action cannot be undone.
+              </p>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeletingProduct(null);
+                  }}
+                  className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteProduct}
+                  className="flex-1 px-6 py-3 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
