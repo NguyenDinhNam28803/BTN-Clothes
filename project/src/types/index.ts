@@ -142,3 +142,17 @@ export interface User {
   updated_at: string;
   last_login?: string;
 }
+
+export interface ProductComment {
+  id: string;
+  product_id: string;
+  user_id: string;
+  parent_comment_id?: string;
+  comment: string;
+  rating?: number;
+  is_approved: boolean;
+  created_at: string;
+  updated_at: string;
+  user_email?: string;
+  replies?: ProductComment[];
+}
