@@ -109,6 +109,8 @@ export interface Review {
   is_approved: boolean;
   created_at: string;
   updated_at: string;
+  product?: Product;
+  user?: User;
 }
 
 export interface Address {
@@ -127,4 +129,16 @@ export interface Address {
   updated_at: string;
   // Virtual field (not stored in DB)
   address_type?: string;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  full_name?: string;
+  phone?: string;
+  role: 'customer' | 'admin';
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  last_login?: string;
 }
