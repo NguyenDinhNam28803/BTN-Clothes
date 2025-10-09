@@ -15,6 +15,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { Product, Order } from '../types';
 import { useToast } from '../components/Toast';
+import SettingsTabs from '../components/admin/SettingsTabs';
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -540,6 +541,16 @@ export default function Admin() {
                   </table>
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'settings' && (
+            <div>
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold mb-2">Settings</h1>
+                <p className="text-gray-600">Configure store settings</p>
+              </div>
+              <SettingsTabs />
             </div>
           )}
         </main>

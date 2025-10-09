@@ -55,7 +55,7 @@ export default function Header() {
 
           <nav className="hidden md:flex items-center gap-8">
             <Link
-              to="/shop"
+              to="/shop?reset=true"
               className={`font-medium transition-colors hover:text-teal-500 ${
                 isScrolled || !hasHeroImage ? 'text-gray-800' : 'text-white'
               }`}
@@ -185,7 +185,7 @@ export default function Header() {
         {isMobileMenuOpen && (
           <nav className="md:hidden mt-4 pb-4 border-t border-white/20 pt-4">
             <div className="flex flex-col gap-4">
-              <Link to="/shop" className={`font-medium ${isScrolled || !hasHeroImage ? 'text-gray-800' : 'text-white'}`}>
+              <Link to="/shop?reset=true" className={`font-medium ${isScrolled || !hasHeroImage ? 'text-gray-800' : 'text-white'}`}>
                 Shop
               </Link>
               <Link to="/shop?category=men" className={`font-medium ${isScrolled || !hasHeroImage ? 'text-gray-800' : 'text-white'}`}>

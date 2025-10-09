@@ -28,13 +28,19 @@ export default function Shop() {
 
   useEffect(() => {
     loadInitialData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
-  // Check for focusSearch and category parameters in URL
   useEffect(() => {
     if (searchParams.get('focusSearch') === 'true' && searchInputRef.current) {
       searchInputRef.current.focus();
+    }
+    
+    if (searchParams.get('reset') === 'true') {
+      setSelectedCategory('all');
+      setPriceRange([0, 200]);
+      setSearchQuery('');
+      setSortBy('featured');
+      return;
     }
     
     const categoryFromURL = searchParams.get('category');
@@ -345,9 +351,9 @@ export default function Shop() {
               </div>
             ) : (
               <div
-                className={`grid gap-6 ${
+                className={`grid gap-4 ${
                   viewMode === 'grid'
-                    ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                    ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
                     : 'grid-cols-1'
                 }`}
               >
@@ -371,7 +377,7 @@ export default function Shop() {
                       <Link
                         to={`/product/${product.id}`}
                         className={`relative overflow-hidden bg-gray-100 flex-shrink-0 ${
-                          viewMode === 'list' ? 'w-64 h-80' : 'w-full aspect-[3/4]'
+                          viewMode === 'list' ? 'w-64 h-80' : 'w-full aspect-[4/5]'
                         }`}
                       >
                         <img
@@ -407,23 +413,23 @@ export default function Shop() {
                         </button>
                       </Link>
 
-                      <div className={`p-5 flex flex-col flex-1 ${viewMode === 'list' ? 'justify-between' : ''}`}>
+                      <div className={`p-3 flex flex-col flex-1 ${viewMode === 'list' ? 'justify-between' : ''}`}>
                         <div>
                           <Link to={`/product/${product.id}`}>
-                            <h3 className="font-semibold text-lg mb-2 line-clamp-1 group-hover:text-teal-500 transition-colors">
+                            <h3 className="font-semibold text-base mb-1 line-clamp-1 group-hover:text-teal-500 transition-colors">
                               {product.name}
                             </h3>
                           </Link>
-                          <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                          <p className="text-gray-600 text-xs mb-2 line-clamp-1">
                             {product.description}
                           </p>
                         </div>
 
                         <div className="mt-auto">
-                          <div className="flex items-baseline gap-2 mb-3">
-                            <span className="text-2xl font-bold text-teal-600">${price.toFixed(2)}</span>
+                          <div className="flex items-baseline gap-2 mb-2">
+                            <span className="text-lg font-bold text-teal-600">${price.toFixed(2)}</span>
                             {hasDiscount && (
-                              <span className="text-sm text-gray-400 line-through">${product.base_price.toFixed(2)}</span>
+                              <span className="text-xs text-gray-400 line-through">${product.base_price.toFixed(2)}</span>
                             )}
                           </div>
                           <button
@@ -431,9 +437,9 @@ export default function Shop() {
                               e.stopPropagation();
                               handleAddToCart(product.id);
                             }}
-                            className="w-full flex items-center justify-center gap-2 py-2.5 bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 active:scale-95 transition-all"
+                            className="w-full flex items-center justify-center gap-1 py-1.5 text-sm bg-teal-500 text-white font-medium rounded-lg hover:bg-teal-600 active:scale-95 transition-all"
                           >
-                            <ShoppingCart size={18} />
+                            <ShoppingCart size={16} />
                             <span>Add to Cart</span>
                           </button>
                         </div>
