@@ -34,6 +34,11 @@ function AppContent() {
     console.log("URL: http://127.0.0.1:54321");
   }, []);
   
+  // Tự động cuộn lên đầu trang khi điều hướng
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+  
   // Initialize luxury animations whenever the route changes
   useEffect(() => {
     // Small timeout to ensure DOM elements are fully rendered

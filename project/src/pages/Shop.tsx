@@ -108,6 +108,9 @@ export default function Shop() {
   }, [loadInitialData]);
   
   useEffect(() => {
+    // Cuộn lên đầu trang khi searchParams thay đổi
+    window.scrollTo(0, 0);
+    
     if (searchParams.get('focusSearch') === 'true' && searchInputRef.current) {
       searchInputRef.current.focus();
     }
@@ -247,7 +250,7 @@ export default function Shop() {
         }}
       />
 
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container mx-auto px-4 z-10">
         {activeVoucher && (
           <div className="bg-discount-badge text-white p-4 mb-6 rounded-lg flex items-center gap-3 shadow-lg">
             <Tag className="text-white" size={20} />
@@ -267,9 +270,9 @@ export default function Shop() {
           <p className="text-gray-600">Discover our complete collection</p>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-8 lg:items-start">
           {showFilters && (
-            <aside className="lg:w-64 space-y-6 bg-shop-sidebar p-2 rounded-2xl" data-aos="fade-right">
+            <aside className="lg:w-64 lg:sticky lg:top-28 lg:self-start w-full flex-shrink-0 space-y-6 bg-shop-sidebar p-2 rounded-2xl lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto"  data-aos="fade-right">
               <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-olive-gold/10">
                 <h3 className="font-cormorant font-medium text-xl mb-4 text-deep-navy tracking-wide">Categories</h3>
                 <div className="space-y-2">

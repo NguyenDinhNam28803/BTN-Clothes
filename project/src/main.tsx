@@ -14,8 +14,16 @@ function AppWrapper() {
       easing: 'ease-out',
       disable: 'mobile',
       offset: 120,
-      mirror: false
+      mirror: false,
+      // Tắt AOS khi có transform để không ảnh hưởng sticky
+      disableMutationObserver: false,
+      anchorPlacement: 'top-bottom'
     });
+    
+    // Refresh AOS khi route thay đổi
+    return () => {
+      AOS.refresh();
+    };
   }, []);
 
   return <App />;
