@@ -39,7 +39,7 @@ export default function Home() {
         .eq('status', 'active')
         .eq('is_new', true)
         .order('created_at', { ascending: false })
-        .limit(8);
+        .limit(9);
 
       // Fetch flash sale products (products with sale_price)
       const { data: saleProducts } = await supabase
@@ -48,7 +48,7 @@ export default function Home() {
         .eq('status', 'active')
         .not('sale_price', 'is', null)
         .order('created_at', { ascending: false })
-        .limit(4);
+        .limit(3);
 
       setNewArrivals(newProducts || []);
       setFlashSaleProducts(saleProducts || []);
