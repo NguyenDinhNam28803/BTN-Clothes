@@ -21,16 +21,21 @@ import { useToast } from '../components/Toast';
 import { supabase } from '../lib/supabase';
 
 // Admin components
-import UserManagement from '../components/admin/UserManagement';
-import SystemConfiguration from '../components/admin/SystemConfiguration';
 import ContentManagement from '../components/admin/ContentManagement';
-import RolePermissions from '../components/admin/RolePermissions';
-import DatabaseBackup from '../components/admin/DatabaseBackup';
-import AnalyticsDashboard from '../components/admin/AnalyticsDashboard';
-import EmailTemplates from '../components/admin/EmailTemplates';
-import PaymentSettings from '../components/admin/PaymentSettings';
-import SecuritySettings from '../components/admin/SecuritySettings';
-import AuditLogs from '../components/admin/AuditLogs';
+import SettingsTabs from '../components/admin/SettingsTabs';
+import GeneralSettings from '../components/admin/GeneralSettings';
+import SocialSettings from '../components/admin/SocialSettings';
+
+// Placeholder components for missing admin components
+const UserManagement = () => <div className="p-4">Quản lý người dùng đang được phát triển</div>;
+const SystemConfiguration = () => <div className="p-4">Cấu hình hệ thống đang được phát triển</div>;
+const RolePermissions = () => <div className="p-4">Vai trò & Quyền hạn đang được phát triển</div>;
+const DatabaseBackup = () => <div className="p-4">Cơ sở dữ liệu & Sao lưu đang được phát triển</div>;
+const AnalyticsDashboard = () => <div className="p-4">Phân tích đang được phát triển</div>;
+const EmailTemplates = () => <div className="p-4">Mẫu Email đang được phát triển</div>;
+const PaymentSettings = () => <div className="p-4">Cài đặt thanh toán đang được phát triển</div>;
+const SecuritySettings = () => <div className="p-4">Bảo mật đang được phát triển</div>;
+const AuditLogs = () => <div className="p-4">Nhật ký hệ thống đang được phát triển</div>;
 
 interface AdminTab {
   id: string;
@@ -146,7 +151,7 @@ export default function AdminSettings() {
       permissions: ['manage_payments']
     },
     {
-      id: 'security-settings',
+      id: 'security',
       name: 'Security',
       icon: <Lock size={20} />,
       component: <SecuritySettings />,

@@ -272,7 +272,7 @@ export default function Shop() {
 
         <div className="flex flex-col lg:flex-row gap-8 lg:items-start">
           {showFilters && (
-            <aside className="lg:w-64 lg:sticky lg:top-28 lg:self-start w-full flex-shrink-0 space-y-6 bg-shop-sidebar p-2 rounded-2xl lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto"  data-aos="fade-right">
+            <aside className="lg:w-64 fixed top-28 lg:self-start w-full flex-shrink-0 space-y-6 bg-shop-sidebar p-2 rounded-2xl max-h-[calc(100vh-8rem)] overflow-y-auto" style={{position: 'sticky'}} data-aos="fade-right">
               <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-olive-gold/10">
                 <h3 className="font-cormorant font-medium text-xl mb-4 text-deep-navy tracking-wide">Categories</h3>
                 <div className="space-y-2">

@@ -633,10 +633,10 @@ export default function Admin() {
   const recentOrders = orders.slice(0, 4);
 
   return (
-    <div className="min-h-screen pt-20 pb-16 bg-gray-50">
+    <div className="min-h-screen pt-20 pb-16 bg-gray-100">
       <div className="flex">
-        <aside className="w-64 min-h-screen bg-gray-900 text-white p-6 fixed">
-          <h2 className="text-2xl font-serif mb-8">BTN Admin</h2>
+        <aside className="w-64 min-h-screen bg-white shadow-lg text-gray-800 p-6 fixed">
+          <h2 className="text-2xl font-bold mb-8 text-teal-600">BTN Admin</h2>
           <nav className="space-y-2">
             {menuItems.map((item) => {
               const Icon = item.icon;
@@ -646,12 +646,12 @@ export default function Admin() {
                   onClick={() => setActiveTab(item.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     activeTab === item.id
-                      ? 'bg-teal-500 text-white'
-                      : 'text-gray-300 hover:bg-gray-800'
+                      ? 'bg-teal-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <Icon size={20} />
-                  <span>{item.label}</span>
+                  <span className="font-medium">{item.label}</span>
                 </button>
               );
             })}
@@ -670,32 +670,32 @@ export default function Admin() {
                 {statsDisplay.map((stat, index) => {
                   const Icon = stat.icon;
                   return (
-                    <div key={index} className="bg-white rounded-2xl shadow-lg p-6">
+                    <div key={index} className="bg-white rounded-xl shadow p-6 hover:shadow-md transition-shadow">
                       <div className="flex items-center justify-between mb-4">
-                        <div className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center text-white`}>
+                        <div className={`w-12 h-12 ${stat.color.replace('bg-', 'bg-opacity-10 text-').replace('red-500', 'red-600').replace('green-500', 'teal-600').replace('blue-500', 'teal-600').replace('purple-500', 'teal-600')} rounded-full flex items-center justify-center`}>
                           <Icon size={24} />
                         </div>
                         <span className={`text-sm font-semibold ${
-                          stat.change.startsWith('+') ? 'text-green-500' : 'text-red-500'
+                          stat.change.startsWith('+') ? 'text-teal-600' : 'text-red-600'
                         }`}>
                           {stat.change}
                         </span>
                       </div>
                       <p className="text-gray-600 text-sm mb-1">{stat.label}</p>
-                      <p className="text-2xl font-bold">{stat.value}</p>
+                      <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
                     </div>
                   );
                 })}
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                <div className="bg-white rounded-2xl shadow-lg p-6">
-                  <h3 className="text-xl font-semibold mb-4">Tổng quan Bán hàng</h3>
+                <div className="bg-white rounded-xl shadow p-6">
+                  <h3 className="text-xl font-semibold mb-4 text-gray-800">Tổng quan Bán hàng</h3>
                   <div className="h-64 flex items-end justify-between gap-2">
                     {[65, 45, 78, 52, 90, 70, 85].map((height, index) => (
                       <div key={index} className="flex-1 flex flex-col items-center">
                         <div
-                          className="w-full bg-teal-500 rounded-t-lg transition-all hover:bg-teal-600"
+                          className="w-full bg-teal-600 rounded-t-md transition-all hover:bg-teal-700"
                           style={{ height: `${height}%` }}
                         />
                         <span className="text-xs text-gray-600 mt-2">
@@ -706,8 +706,8 @@ export default function Admin() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-lg p-6">
-                  <h3 className="text-xl font-semibold mb-4">Danh mục Hàng đầu</h3>
+                <div className="bg-white rounded-xl shadow p-6">
+                  <h3 className="text-xl font-semibold mb-4 text-gray-800">Danh mục Hàng đầu</h3>
                   <div className="space-y-4">
                     {[
                       { name: 'Men\'s Clothing', sales: 45, color: 'bg-blue-500' },
@@ -732,10 +732,10 @@ export default function Admin() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl shadow-lg p-6">
+              <div className="bg-white rounded-xl shadow p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-semibold">Đơn hàng Gần đây</h3>
-                  <button className="text-teal-500 hover:text-teal-600 font-medium">
+                  <h3 className="text-xl font-semibold text-gray-800">Đơn hàng Gần đây</h3>
+                  <button className="text-teal-600 hover:text-teal-700 font-medium transition-colors">
                     Xem tất cả →
                   </button>
                 </div>
@@ -899,10 +899,10 @@ export default function Admin() {
                                 </button>
                                 <button 
                                   onClick={() => openDeleteModal(product)}
-                                  className="text-red-500 hover:text-red-600 font-medium flex items-center gap-1"
+                                  className="text-red-600 hover:text-red-700 font-medium flex items-center gap-1"
                                 >
                                   <Trash2 size={16} />
-                                  Delete
+                                  Xóa
                                 </button>
                               </div>
                             </td>
@@ -929,19 +929,19 @@ export default function Admin() {
                 <p className="text-gray-600">Xem và quản lý thông tin khách hàng</p>
               </div>
 
-              <div className="bg-white rounded-2xl shadow-lg p-6">
+              <div className="bg-white rounded-xl shadow p-6">
                 <div className="flex gap-4 mb-6">
                   <input
                     type="text"
                     placeholder="Tìm kiếm khách hàng..."
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600"
                   />
                   <select 
                     value={userRole}
                     onChange={(e) => setUserRole(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600"
                   >
                     <option value="all">Tất cả vai trò</option>
                     <option value="customer">Khách hàng</option>
