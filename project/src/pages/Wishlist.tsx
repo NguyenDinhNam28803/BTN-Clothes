@@ -164,13 +164,6 @@ export default function Wishlist() {
               {item.product && (
                 <>
                   <ProductCard product={item.product} />
-                  <button
-                    onClick={() => removeItem(item.id)}
-                    className="absolute top-4 right-4 z-10 p-2 bg-white/80 backdrop-blur-sm rounded-none shadow-sm border border-olive-gold/20 hover:bg-olive-gold/10 hover:text-deep-navy fade-transition"
-                    aria-label="Remove from wishlist"
-                  >
-                    <X size={18} />
-                  </button>
                 </>
               )}
             </div>
