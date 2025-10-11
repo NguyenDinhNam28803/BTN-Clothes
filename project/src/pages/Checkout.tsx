@@ -67,7 +67,6 @@ export default function Checkout() {
 
   // State cho danh sách địa chỉ đã lưu
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
-  const [loadingAddresses, setLoadingAddresses] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
     null
   );
@@ -126,7 +125,6 @@ export default function Checkout() {
       if (!user) return;
 
       try {
-        setLoadingAddresses(true);
 
         const { data, error } = await supabase
           .from("addresses")
@@ -161,8 +159,6 @@ export default function Checkout() {
         }
       } catch (error) {
         console.error("Error in fetchSavedAddresses:", error);
-      } finally {
-        setLoadingAddresses(false);
       }
     };
 
@@ -298,74 +294,58 @@ export default function Checkout() {
 
   const handlePlaceOrder = async () => {
     showToast("Đang xử lý đơn hàng...", "info");
+    if (!user) {
+      showToast("Bạn cần đăng nhập để đặt hàng", "error");
+      return;
+    }
+    try {
+      // Insert order
+      const { data: orderData, error: orderError } = await supabase.from('orders').insert([
+        {
+          user_id: user.id,
+          order_number: `ORD-${Math.floor(100000 + Math.random() * 900000)}`,
+          status: 'processing',
+          total_amount: total,
+          shipping_address: {
+            full_name: shippingInfo.fullName,
+            phone: shippingInfo.phone,
+            address_line1: shippingInfo.address,
+            city: shippingInfo.city,
+            state: shippingInfo.state,
+            postal_code: shippingInfo.postalCode,
+            country: 'VN',
+          },
+          payment_method: paymentMethod || 'cod',
+          payment_status: 'pending',
+          voucher_code: appliedVoucher || null,
+          discount_amount: orderSummary.discount || 0,
+        }
+      ]).select().single();
+      if (orderError || !orderData) throw orderError || new Error('Không thể tạo đơn hàng');
 
-    const newOrderId = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    const order = {
-      id: newOrderId,
-      date: new Date().toISOString(),
-      status: "processing",
-      total: total,
-      items: cartItems.map((item) => ({
-        id: item.id,
-        product_name: item.product?.name || "Product",
+      // Insert order_items
+      const orderItems = cartItems.map((item) => ({
+        order_id: orderData.id,
+        product_id: item.product_id,
+        variant_id: item.variant_id,
         quantity: item.quantity,
         price:
           (item.product?.sale_price || item.product?.base_price || 0) +
           (item.variant?.price_adjustment || 0),
-        image_url:
-          item.product?.images?.[0] || "https://via.placeholder.com/100",
-        variant: item.variant,
-      })),
-      shipping_address: {
-        fullName: shippingInfo.fullName,
-        address: shippingInfo.address,
-        city: shippingInfo.city,
-        postalCode: shippingInfo.postalCode,
-        phone: shippingInfo.phone,
-      },
-    };
+      }));
+      const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
+      if (itemsError) throw itemsError;
 
-    setTimeout(() => {
-      try {
-        const existingOrders = JSON.parse(
-          localStorage.getItem("orders") || "[]"
-        );
-        existingOrders.push(order);
-        localStorage.setItem("orders", JSON.stringify(existingOrders));
-
-        const ordersList = JSON.parse(
-          localStorage.getItem("ordersList") || "[]"
-        );
-        ordersList.push({
-          id: newOrderId,
-          date: new Date().toISOString(),
-          status: "processing",
-          total: total,
-          items_count: cartItems.length,
-        });
-        localStorage.setItem("ordersList", JSON.stringify(ordersList));
-
-        setOrderId(newOrderId);
-        setOrderComplete(true);
-
-        clearCart();
-
-        localStorage.removeItem("shippingInfo");
-        localStorage.removeItem("orderSummary");
-
-        showToast(
-          "Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại BTN Clothes.",
-          "success"
-        );
-      } catch (error) {
-        console.error("Failed to save order:", error);
-        showToast(
-          "Đã xảy ra lỗi khi xử lý đơn hàng. Vui lòng thử lại.",
-          "error"
-        );
-      }
-    }, 1000);
+      setOrderId(orderData.order_number);
+      setOrderComplete(true);
+      clearCart();
+      localStorage.removeItem("shippingInfo");
+      localStorage.removeItem("orderSummary");
+      showToast("Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại BTN Clothes.", "success");
+    } catch (error) {
+      console.error("Failed to save order:", error);
+      showToast("Đã xảy ra lỗi khi xử lý đơn hàng. Vui lòng thử lại.", "error");
+    }
   };
 
   if (orderComplete) {

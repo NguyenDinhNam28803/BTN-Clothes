@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Package, ArrowRight, Clock, Truck, CheckCircle, X, LogIn } from 'lucide-react';
+import { Package, ArrowRight, Clock, Truck, CheckCircle, X } from 'lucide-react';
 
 // Define order status types
 type OrderStatus = 'processing' | 'shipped' | 'delivered' | 'cancelled';
