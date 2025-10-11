@@ -38,6 +38,8 @@ export default function Admin() {
     totalCustomers: 0,
     lowStockItems: 0
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [productsPerPage] = useState(8);
   
   // Filters
   const [productSearch, setProductSearch] = useState('');
@@ -90,6 +92,15 @@ export default function Admin() {
     valid_until: '',
     is_active: true,
   });
+
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = products.slice(indexOfFirstProduct, indexOfLastProduct);
+  const currentVouchers = vouchers.slice(indexOfFirstProduct, indexOfLastProduct);
+  const currentReviews = reviews.slice(indexOfFirstProduct, indexOfLastProduct);
+  const currentUsers = users.slice(indexOfFirstProduct, indexOfLastProduct);
+  const currentOrders = orders.slice(indexOfFirstProduct, indexOfLastProduct);
+  const totalPages = Math.ceil(products.length / productsPerPage);
   
   useEffect(() => {
     loadData();
@@ -98,6 +109,7 @@ export default function Admin() {
   const loadData = async () => {
     setLoading(true);
     try {
+      setCurrentPage(1); // Reset to first page on data reload
       await Promise.all([
         loadCategories(),
         loadProducts(),
@@ -759,7 +771,7 @@ export default function Admin() {
                           </td>
                         </tr>
                       ) : recentOrders.length > 0 ? (
-                        recentOrders.map((order) => (
+                        currentOrders.map((order) => (
                           <tr key={order.id} className="border-b hover:bg-gray-50">
                             <td className="py-3 px-4 font-medium">{order.id.substring(0, 8)}</td>
                             <td className="py-3 px-4">{order.shipping_address?.full_name || 'N/A'}</td>
@@ -798,6 +810,63 @@ export default function Admin() {
                       )}
                     </tbody>
                   </table>
+                  {/* Pagination */}
+                  {!loading && vouchers.length > 0 && totalPages > 1 && (
+                    <div className="flex justify-center items-center gap-2 mt-8">
+                      <button
+                        onClick={() => {
+                          setCurrentPage(prev => Math.max(prev - 1, 1));
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        disabled={currentPage === 1}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        aria-label="Previous page"
+                      >
+                        ←
+                      </button>
+                      
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                        // Hiển thị trang đầu, cuối, trang hiện tại và 1 trang trước/sau
+                        if (
+                          page === 1 ||
+                          page === totalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1)
+                        ) {
+                          return (
+                            <button
+                              key={page}
+                              onClick={() => {
+                                setCurrentPage(page);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                              className={`min-w-[40px] h-10 rounded-lg font-medium transition-colors ${
+                                currentPage === page
+                                  ? 'bg-teal-500 text-white'
+                                  : 'border border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          );
+                        } else if (page === currentPage - 2 || page === currentPage + 2) {
+                          return <span key={page} className="px-2">...</span>;
+                        }
+                        return null;
+                      })}
+                      
+                      <button
+                        onClick={() => {
+                          setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        disabled={currentPage === totalPages}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        aria-label="Next page"
+                      >
+                        →
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -871,7 +940,7 @@ export default function Admin() {
                           </td>
                         </tr>
                       ) : filteredProducts.length > 0 ? (
-                        filteredProducts.map((product) => (
+                        currentProducts.map((product) => (
                           <tr key={product.id} className="border-b hover:bg-gray-50">
                             <td className="py-3 px-4 font-medium">{product.name}</td>
                             <td className="py-3 px-4">{getCategoryName(product.category_id)}</td>
@@ -917,6 +986,65 @@ export default function Admin() {
                       )}
                     </tbody>
                   </table>
+                  
+                {/* Pagination */}
+                {!loading && products.length > 0 && totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-2 mt-8">
+                    <button
+                      onClick={() => {
+                        setCurrentPage(prev => Math.max(prev - 1, 1));
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      disabled={currentPage === 1}
+                      className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      aria-label="Previous page"
+                    >
+                      ←
+                    </button>
+                    
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      // Hiển thị trang đầu, cuối, trang hiện tại và 1 trang trước/sau
+                      if (
+                        page === 1 ||
+                        page === totalPages ||
+                        (page >= currentPage - 1 && page <= currentPage + 1)
+                      ) {
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => {
+                              setCurrentPage(page);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className={`min-w-[40px] h-10 rounded-lg font-medium transition-colors ${
+                              currentPage === page
+                                ? 'bg-teal-500 text-white'
+                                : 'border border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      } else if (page === currentPage - 2 || page === currentPage + 2) {
+                        return <span key={page} className="px-2">...</span>;
+                      }
+                      return null;
+                    })}
+                    
+                    <button
+                      onClick={() => {
+                        setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      disabled={currentPage === totalPages}
+                      className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      aria-label="Next page"
+                    >
+                      →
+                    </button>
+                  </div>
+                )}
+
                 </div>
               </div>
             </div>
@@ -970,7 +1098,7 @@ export default function Admin() {
                           </td>
                         </tr>
                       ) : filteredUsers.length > 0 ? (
-                        filteredUsers.map((user) => (
+                        currentUsers.map((user) => (
                           <tr key={user.id} className="border-b hover:bg-gray-50">
                             <td className="py-3 px-4 font-medium">{user.full_name || 'Chưa cập nhật'}</td>
                             <td className="py-3 px-4">{user.email}</td>
@@ -1017,6 +1145,63 @@ export default function Admin() {
                       )}
                     </tbody>
                   </table>
+                  {/* Pagination */}
+                  {!loading && vouchers.length > 0 && totalPages > 1 && (
+                    <div className="flex justify-center items-center gap-2 mt-8">
+                      <button
+                        onClick={() => {
+                          setCurrentPage(prev => Math.max(prev - 1, 1));
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        disabled={currentPage === 1}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        aria-label="Previous page"
+                      >
+                        ←
+                      </button>
+                      
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                        // Hiển thị trang đầu, cuối, trang hiện tại và 1 trang trước/sau
+                        if (
+                          page === 1 ||
+                          page === totalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1)
+                        ) {
+                          return (
+                            <button
+                              key={page}
+                              onClick={() => {
+                                setCurrentPage(page);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                              className={`min-w-[40px] h-10 rounded-lg font-medium transition-colors ${
+                                currentPage === page
+                                  ? 'bg-teal-500 text-white'
+                                  : 'border border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          );
+                        } else if (page === currentPage - 2 || page === currentPage + 2) {
+                          return <span key={page} className="px-2">...</span>;
+                        }
+                        return null;
+                      })}
+                      
+                      <button
+                        onClick={() => {
+                          setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        disabled={currentPage === totalPages}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        aria-label="Next page"
+                      >
+                        →
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1079,7 +1264,7 @@ export default function Admin() {
                           </td>
                         </tr>
                       ) : filteredVouchers.length > 0 ? (
-                        filteredVouchers.map((voucher) => (
+                        currentVouchers.map((voucher) => (
                           <tr key={voucher.id} className="border-b hover:bg-gray-50">
                             <td className="py-3 px-4 font-medium font-mono">{voucher.code}</td>
                             <td className="py-3 px-4">{voucher.description}</td>
@@ -1129,6 +1314,63 @@ export default function Admin() {
                       )}
                     </tbody>
                   </table>
+                  {/* Pagination */}
+                  {!loading && vouchers.length > 0 && totalPages > 1 && (
+                    <div className="flex justify-center items-center gap-2 mt-8">
+                      <button
+                        onClick={() => {
+                          setCurrentPage(prev => Math.max(prev - 1, 1));
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        disabled={currentPage === 1}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        aria-label="Previous page"
+                      >
+                        ←
+                      </button>
+                      
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                        // Hiển thị trang đầu, cuối, trang hiện tại và 1 trang trước/sau
+                        if (
+                          page === 1 ||
+                          page === totalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1)
+                        ) {
+                          return (
+                            <button
+                              key={page}
+                              onClick={() => {
+                                setCurrentPage(page);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                              className={`min-w-[40px] h-10 rounded-lg font-medium transition-colors ${
+                                currentPage === page
+                                  ? 'bg-teal-500 text-white'
+                                  : 'border border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          );
+                        } else if (page === currentPage - 2 || page === currentPage + 2) {
+                          return <span key={page} className="px-2">...</span>;
+                        }
+                        return null;
+                      })}
+                      
+                      <button
+                        onClick={() => {
+                          setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        disabled={currentPage === totalPages}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        aria-label="Next page"
+                      >
+                        →
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1182,7 +1424,7 @@ export default function Admin() {
                           </td>
                         </tr>
                       ) : filteredReviews.length > 0 ? (
-                        filteredReviews.map((review) => (
+                        currentReviews.map((review) => (
                           <tr key={review.id} className="border-b hover:bg-gray-50">
                             <td className="py-3 px-4 font-medium">{review.product?.name || 'N/A'}</td>
                             <td className="py-3 px-4">{review.user?.full_name || 'N/A'}</td>
@@ -1233,6 +1475,63 @@ export default function Admin() {
                       )}
                     </tbody>
                   </table>
+                  {/* Pagination */}
+                  {!loading && vouchers.length > 0 && totalPages > 1 && (
+                    <div className="flex justify-center items-center gap-2 mt-8">
+                      <button
+                        onClick={() => {
+                          setCurrentPage(prev => Math.max(prev - 1, 1));
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        disabled={currentPage === 1}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        aria-label="Previous page"
+                      >
+                        ←
+                      </button>
+                      
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                        // Hiển thị trang đầu, cuối, trang hiện tại và 1 trang trước/sau
+                        if (
+                          page === 1 ||
+                          page === totalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1)
+                        ) {
+                          return (
+                            <button
+                              key={page}
+                              onClick={() => {
+                                setCurrentPage(page);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                              className={`min-w-[40px] h-10 rounded-lg font-medium transition-colors ${
+                                currentPage === page
+                                  ? 'bg-teal-500 text-white'
+                                  : 'border border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          );
+                        } else if (page === currentPage - 2 || page === currentPage + 2) {
+                          return <span key={page} className="px-2">...</span>;
+                        }
+                        return null;
+                      })}
+                      
+                      <button
+                        onClick={() => {
+                          setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        disabled={currentPage === totalPages}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        aria-label="Next page"
+                      >
+                        →
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1288,7 +1587,7 @@ export default function Admin() {
                           </td>
                         </tr>
                       ) : filteredOrders.length > 0 ? (
-                        filteredOrders.map((order) => (
+                        currentOrders.map((order) => (
                           <tr key={order.id} className="border-b hover:bg-gray-50">
                             <td className="py-3 px-4 font-medium">{order.id.substring(0, 8)}</td>
                             <td className="py-3 px-4">{order.shipping_address?.full_name || 'N/A'}</td>
@@ -1327,6 +1626,63 @@ export default function Admin() {
                       )}
                     </tbody>
                   </table>
+                  {/* Pagination */}
+                  {!loading && vouchers.length > 0 && totalPages > 1 && (
+                    <div className="flex justify-center items-center gap-2 mt-8">
+                      <button
+                        onClick={() => {
+                          setCurrentPage(prev => Math.max(prev - 1, 1));
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        disabled={currentPage === 1}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        aria-label="Previous page"
+                      >
+                        ←
+                      </button>
+                      
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                        // Hiển thị trang đầu, cuối, trang hiện tại và 1 trang trước/sau
+                        if (
+                          page === 1 ||
+                          page === totalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1)
+                        ) {
+                          return (
+                            <button
+                              key={page}
+                              onClick={() => {
+                                setCurrentPage(page);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                              className={`min-w-[40px] h-10 rounded-lg font-medium transition-colors ${
+                                currentPage === page
+                                  ? 'bg-teal-500 text-white'
+                                  : 'border border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          );
+                        } else if (page === currentPage - 2 || page === currentPage + 2) {
+                          return <span key={page} className="px-2">...</span>;
+                        }
+                        return null;
+                      })}
+                      
+                      <button
+                        onClick={() => {
+                          setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        disabled={currentPage === totalPages}
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        aria-label="Next page"
+                      >
+                        →
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
