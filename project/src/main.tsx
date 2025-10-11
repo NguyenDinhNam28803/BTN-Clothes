@@ -13,7 +13,7 @@ function AppWrapper() {
       once: false,
       easing: 'ease-out',
       disable: 'mobile',
-      offset: 120,
+      offset: 50,
       mirror: false,
       // Tắt AOS khi có transform để không ảnh hưởng sticky
       disableMutationObserver: false,

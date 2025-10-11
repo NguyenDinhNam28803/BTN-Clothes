@@ -9,6 +9,17 @@ import { useToast } from '../components/Toast';
 import ProductCard from '../components/ProductCard';
 
 export default function Home() {
+  // Tự động scroll đến Flash Sale nếu có hash
+  useEffect(() => {
+    if (window.location.hash === '#flash-sale') {
+      setTimeout(() => {
+        const el = document.getElementById('flash-sale');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 200); // Đợi DOM render xong
+    }
+  }, []);
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
   const [flashSaleProducts, setFlashSaleProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -154,6 +165,17 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
+  // Tự động scroll đến Flash Sale nếu có hash
+  useEffect(() => {
+    if (window.location.hash === '#flash-sale') {
+      setTimeout(() => {
+        const el = document.getElementById('flash-sale');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 300); // Đợi DOM render xong
+    }
+  }, []);
   return (
     <div className="min-h-screen w-screen max-w-[100vw] overflow-x-hidden">
       <section className="relative min-h-screen w-full flex items-center justify-center overflow-hidden">
@@ -311,6 +333,7 @@ export default function Home() {
       </section>
 
       <section
+        id="flash-sale"
         className="py-24 relative w-full bg-luxury-dots"
         data-scroll
       >

@@ -27,6 +27,8 @@ export default function Shop() {
   const { addToCart } = useCart();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { showToast } = useToast();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [productsPerPage] = useState(8); // 2 dòng x 4 sản phẩm = 8 sản phẩm/trang
 
   const loadInitialData = useCallback(async () => {
     setLoading(true);
@@ -188,9 +190,16 @@ export default function Shop() {
     setProducts(filtered);
   }, [categories]);
 
+  // Tính toán pagination
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = products.slice(indexOfFirstProduct, indexOfLastProduct);
+  const totalPages = Math.ceil(products.length / productsPerPage);
+
   useEffect(() => {
     if (allProducts.length > 0) {
       filterAndSortProducts(allProducts, selectedCategory, sortBy, searchQuery, priceRange);
+      setCurrentPage(1); // Đặt lại trang hiện tại về 1 khi bộ lọc thay đổi
     }
   }, [selectedCategory, sortBy, searchQuery, priceRange, allProducts, filterAndSortProducts]);
 
@@ -378,7 +387,7 @@ export default function Shop() {
               </div>
 
               <p className="text-sm text-gray-600 mt-4">
-                {loading ? 'Loading...' : `${products.length} products found`}
+                {loading ? 'Loading...' : `Showing${indexOfFirstProduct + 1}-${Math.min(indexOfLastProduct, products.length)} of ${products.length} products`}
               </p>
             </div>
 
@@ -416,7 +425,7 @@ export default function Shop() {
                     : 'grid-cols-1'
                 }`}
               >
-                {products.map((product, index) => {
+                {currentProducts.map((product, index) => {
                   const price = product.sale_price || product.base_price;
                   const hasDiscount = product.sale_price && product.sale_price < product.base_price;
                   // Parse images if they're stored as a JSON string
@@ -521,6 +530,65 @@ export default function Shop() {
                 })}
               </div>
             )}
+
+            {/* Pagination */}
+            {!loading && products.length > 0 && totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-8" data-aos="fade-up">
+                <button
+                  onClick={() => {
+                    setCurrentPage(prev => Math.max(prev - 1, 1));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Previous page"
+                >
+                  ←
+                </button>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                  // Hiển thị trang đầu, cuối, trang hiện tại và 1 trang trước/sau
+                  if (
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => {
+                          setCurrentPage(page);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className={`min-w-[40px] h-10 rounded-lg font-medium transition-colors ${
+                          currentPage === page
+                            ? 'bg-teal-500 text-white'
+                            : 'border border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  } else if (page === currentPage - 2 || page === currentPage + 2) {
+                    return <span key={page} className="px-2">...</span>;
+                  }
+                  return null;
+                })}
+                
+                <button
+                  onClick={() => {
+                    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Next page"
+                >
+                  →
+                </button>
+              </div>
+            )}
+
           </main>
         </div>
       </div>

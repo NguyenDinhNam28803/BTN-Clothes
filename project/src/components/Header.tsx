@@ -80,7 +80,7 @@ export default function Header() {
               Women
             </Link>
             <Link
-              to="/sale"
+              to="/#flash-sale"
               className={`font-sans text-sm uppercase tracking-wider transition-colors hover:text-olive-gold ${
                 isScrolled || !hasHeroImage ? 'text-muted-rust' : 'text-muted-rust/90'
               }`}

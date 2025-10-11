@@ -49,6 +49,18 @@ import womenProduct10_1 from '../Assets/IMG/Women/10.1.webp';
 import womenProduct10_2 from '../Assets/IMG/Women/10.2.webp';
 import womenProduct10_3 from '../Assets/IMG/Women/10.3.webp';
 
+import womenProduct11 from '../Assets/IMG/Women/11.webp';
+import womenProduct11_1 from '../Assets/IMG/Women/11.1.webp';
+import womenProduct11_2 from '../Assets/IMG/Women/11.2.webp';
+
+import womenProduct12 from '../Assets/IMG/Women/12.webp';
+import womenProduct12_1 from '../Assets/IMG/Women/12.1.webp';
+import womenProduct12_4 from '../Assets/IMG/Women/12.4.webp';
+import womenProduct12_3 from '../Assets/IMG/Women/12.3.webp';
+
+import womenProduct13 from '../Assets/IMG/Women/13.webp';
+import womenProduct13_1 from '../Assets/IMG/Women/13.1.webp';
+import womenProduct13_2 from '../Assets/IMG/Women/13.2.webp';
 // Men's product images
 import menProduct1 from '../Assets/IMG/Men/1.webp';
 import menProduct1_2 from '../Assets/IMG/Men/1.2.webp';
@@ -94,7 +106,24 @@ import menProduct10_1 from '../Assets/IMG/Men/10.1.webp';
 import menProduct10_2 from '../Assets/IMG/Men/10.2.webp';
 import menProduct10_3 from '../Assets/IMG/Men/10.3.webp';
 
+import menProduct11 from '../Assets/IMG/Men/11.webp';
+import menProduct11_1 from '../Assets/IMG/Men/11.1.webp';
+import menProduct11_2 from '../Assets/IMG/Men/11.2.webp';
+
+import menProduct12 from '../Assets/IMG/Men/12.webp';
+import menProduct12_1 from '../Assets/IMG/Men/12.1.webp';
+import menProduct12_2 from '../Assets/IMG/Men/12.2.webp';
+
 // Kids product images
+/* Lines 110-151 omitted */
+
+import kidsProduct11 from '../Assets/IMG/Kids/11.webp';
+import kidsProduct11_1 from '../Assets/IMG/Kids/11.1.webp';
+import kidsProduct11_3 from '../Assets/IMG/Kids/11.3.webp';
+
+import kidsProduct12 from '../Assets/IMG/Kids/12.webp';
+import kidsProduct12_1 from '../Assets/IMG/Kids/12.1.webp';
+import kidsProduct12_2 from '../Assets/IMG/Kids/12.2.webp';
 import kidsProduct1 from '../Assets/IMG/Kids/1.webp';
 import kidsProduct1_1 from '../Assets/IMG/Kids/1.1.webp';
 import kidsProduct1_2 from '../Assets/IMG/Kids/1.2.webp';
@@ -138,6 +167,11 @@ import kidsProduct10_1 from '../Assets/IMG/Kids/10.1.webp';
 import kidsProduct10_2 from '../Assets/IMG/Kids/10.2.webp';
 
 // Accessories product images
+/* Lines 153-185 omitted */
+
+import accessoriesProduct11 from '../Assets/IMG/Accessories/11.webp';
+import accessoriesProduct11_1 from '../Assets/IMG/Accessories/11.1.webp';
+import accessoriesProduct11_2 from '../Assets/IMG/Accessories/11.2.webp';
 import accessoriesProduct1 from '../Assets/IMG/Accessories/1.webp';
 import accessoriesProduct1_1 from '../Assets/IMG/Accessories/1.1.webp';
 import accessoriesProduct1_2 from '../Assets/IMG/Accessories/1.2.webp';
@@ -221,7 +255,20 @@ export const womenProductImages: Record<string, string> = {
   'Women/10.webp': womenProduct10,
   'Women/10.1.webp': womenProduct10_1,
   'Women/10.2.webp': womenProduct10_2,
-  'Women/10.3.webp': womenProduct10_3
+  'Women/10.3.webp': womenProduct10_3,
+
+  'Women/11.webp': womenProduct11,
+  'Women/11.1.webp': womenProduct11_1,
+  'Women/11.2.webp': womenProduct11_2,
+
+  'Women/12.webp': womenProduct12,
+  'Women/12.1.webp': womenProduct12_1,
+  'Women/12.3.webp': womenProduct12_3,
+  'Women/12.4.webp': womenProduct12_4,
+  
+   'Women/13.webp': womenProduct13,
+  'Women/13.1.webp': womenProduct13_1,
+  'Women/13.2.webp': womenProduct13_2
 };
 
 export const kidsProductImages: Record<string, string> = {
@@ -265,7 +312,15 @@ export const kidsProductImages: Record<string, string> = {
   
   'Kids/10.webp': kidsProduct10,
   'Kids/10.1.webp': kidsProduct10_1,
-  'Kids/10.2.webp': kidsProduct10_2
+  'Kids/10.2.webp': kidsProduct10_2,
+  
+  'Kids/11.webp': kidsProduct11,
+  'Kids/11.1.webp': kidsProduct11_1,
+  'Kids/11.3.webp': kidsProduct11_3,
+  
+  'Kids/12.webp': kidsProduct12,
+  'Kids/12.1.webp': kidsProduct12_1,
+  'Kids/12.2.webp': kidsProduct12_2
 };
 
 export const accessoriesProductImages: Record<string, string> = {
@@ -300,7 +355,11 @@ export const accessoriesProductImages: Record<string, string> = {
   
   'Accessories/10.webp': accessoriesProduct10,
   'Accessories/10.1.webp': accessoriesProduct10_1,
-  'Accessories/10.2.webp': accessoriesProduct10_2
+  'Accessories/10.2.webp': accessoriesProduct10_2,
+  
+  'Accessories/11.webp': accessoriesProduct11,
+  'Accessories/11.1.webp': accessoriesProduct11_1,
+  'Accessories/11.2.webp': accessoriesProduct11_2
 };
 
 export const menProductImages: Record<string, string> = {
@@ -346,7 +405,15 @@ export const menProductImages: Record<string, string> = {
   'Men/10.webp': menProduct10,
   'Men/10.1.webp': menProduct10_1,
   'Men/10.2.webp': menProduct10_2,
-  'Men/10.3.webp': menProduct10_3
+  'Men/10.3.webp': menProduct10_3,
+  
+  'Men/11.webp': menProduct11,
+  'Men/11.1.webp': menProduct11_1,
+  'Men/11.2.webp': menProduct11_2,
+  
+  'Men/12.webp': menProduct12,
+  'Men/12.1.webp': menProduct12_1,
+  'Men/12.2.webp': menProduct12_2
 };
 
 export const womenProductsByProduct: Record<string, string[]> = {
@@ -389,6 +456,18 @@ export const womenProductsByProduct: Record<string, string[]> = {
   // Product 10
   '650e8400-e29b-41d4-a716-446655440010': [
     womenProduct10, womenProduct10_1, womenProduct10_2, womenProduct10_3
+  ],
+  // Product 11
+  '650e8400-e29b-41d4-a716-446655440011': [
+    womenProduct11, womenProduct11_1, womenProduct11_2
+  ],
+  // Product 12
+  '650e8400-e29b-41d4-a716-446655440012': [
+    womenProduct12, womenProduct12_1, womenProduct12_3, womenProduct12_4
+  ],
+  // Product 13
+  '650e8400-e29b-41d4-a716-446655440013': [
+    womenProduct13, womenProduct13_1, womenProduct13_2
   ]
 };
 
@@ -432,6 +511,14 @@ export const kidsProductsByProduct: Record<string, string[]> = {
   // Product 10
   '850e8400-e29b-41d4-a716-446655440010': [
     kidsProduct10, kidsProduct10_1, kidsProduct10_2
+  ],
+  // Product 11
+  '850e8400-e29b-41d4-a716-446655440011': [
+    kidsProduct11, kidsProduct11_1, kidsProduct11_3
+  ],
+  // Product 12
+  '850e8400-e29b-41d4-a716-446655440012': [
+    kidsProduct12, kidsProduct12_1, kidsProduct12_2
   ]
 };
 
@@ -475,6 +562,10 @@ export const accessoriesProductsByProduct: Record<string, string[]> = {
   // Product 10
   '950e8400-e29b-41d4-a716-446655440010': [
     accessoriesProduct10, accessoriesProduct10_1, accessoriesProduct10_2
+  ],
+  // Product 11
+  '950e8400-e29b-41d4-a716-446655440011': [
+    accessoriesProduct11, accessoriesProduct11_1, accessoriesProduct11_2
   ]
 };
 
@@ -518,6 +609,14 @@ export const menProductsByProduct: Record<string, string[]> = {
   // Product 10
   '750e8400-e29b-41d4-a716-446655440010': [
     menProduct10, menProduct10_1, menProduct10_2, menProduct10_3
+  ],
+  // Product 11
+  '750e8400-e29b-41d4-a716-446655440011': [
+    menProduct11, menProduct11_1, menProduct11_2
+  ],
+  // Product 12
+  '750e8400-e29b-41d4-a716-446655440012': [
+    menProduct12, menProduct12_1, menProduct12_2
   ]
 };
 
